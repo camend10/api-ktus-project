@@ -2,23 +2,20 @@
 
 namespace App\Models\Configuracion;
 
-use App\Models\Articulos\Articulo;
 use App\Models\Empresa;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
-class Bodega extends Model
+class Iva extends Model
 {
     use HasFactory;
 
-    protected $table = 'bodegas';
+    protected $table = 'iva';
 
     protected $fillable = [
-        'nombre',
-        'descripcion',
+        'porcentaje',
         'empresa_id',
-        'sede_id',
         'estado'
     ];
 
@@ -37,16 +34,5 @@ class Bodega extends Model
     public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id')->withDefault();
-    }
-
-    public function sede()
-    {
-        return $this->belongsTo(Sede::class, 'sede_id')->withDefault();
-    }
-
-    public function articulos()
-    {
-        return $this->belongsToMany(Articulo::class, 'bodegas_articulos', 'bodega_id', 'articulo_id')
-            ->withPivot('cantidad', 'estado', 'unidad_id');
     }
 }

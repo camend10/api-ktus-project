@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Bodegas;
+namespace App\Http\Requests\SegmentoClientes;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class BodegaRequest extends FormRequest
+class SegmentoClienteRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,27 +28,23 @@ class BodegaRequest extends FormRequest
                     'required',
                     'string',
                     'max:100',
-                    Rule::unique('bodegas')->where(function ($query) {
+                    Rule::unique('segmento_cliente')->where(function ($query) {
                         return $query->where('empresa_id', $this->empresa_id);
                     }),
                 ],
-                'descripcion' => 'nullable',
                 'empresa_id' => 'required',
-                'sede_id' => 'required',
                 'estado' => 'integer|nullable'
             ],
             'PUT' => [
                 'nombre' => [
                     'required',
-                    'string',
                     'max:100',
-                    Rule::unique('bodegas')->ignore($this->id)->where(function ($query) {
+                    'string',
+                    Rule::unique('segmento_cliente')->ignore($this->id)->where(function ($query) {
                         return $query->where('empresa_id', $this->empresa_id);
                     }),
                 ],
-                'descripcion' => 'nullable',
                 'empresa_id' => 'required',
-                'sede_id' => 'required',
                 'estado' => 'integer|nullable'
             ],
         };
@@ -60,9 +56,8 @@ class BodegaRequest extends FormRequest
             'nombre.required' => 'El nombre es obligatorio',
             'nombre.string' => 'El nombre debe ser una cadena de caracteres',
             'nombre.max' => 'El máximo de caracteres del nombre es 100',
-            'nombre.unique' => 'Ya existe un registro con este nombre para la empresa seleccionada',            
-            'empresa_id.required' => 'La empresa es obligatoria',
-            'sede_id.required' => 'La sede es obligatoria',
+            'nombre.unique' => 'Ya existe un registro con este nombre para la empresa seleccionada',
+            'empresa_id.required' => 'La empresa es obligatoria'
         ];
     }
 }

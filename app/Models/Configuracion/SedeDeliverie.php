@@ -2,21 +2,20 @@
 
 namespace App\Models\Configuracion;
 
-use App\Models\Articulos\Articulo;
-use App\Models\Empresa;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Models\Empresa;
 
-class Bodega extends Model
+class SedeDeliverie extends Model
 {
     use HasFactory;
 
-    protected $table = 'bodegas';
+    protected $table = 'sede_deliveries';
 
     protected $fillable = [
         'nombre',
-        'descripcion',
+        'direccion',
         'empresa_id',
         'sede_id',
         'estado'
@@ -42,11 +41,5 @@ class Bodega extends Model
     public function sede()
     {
         return $this->belongsTo(Sede::class, 'sede_id')->withDefault();
-    }
-
-    public function articulos()
-    {
-        return $this->belongsToMany(Articulo::class, 'bodegas_articulos', 'bodega_id', 'articulo_id')
-            ->withPivot('cantidad', 'estado', 'unidad_id');
     }
 }

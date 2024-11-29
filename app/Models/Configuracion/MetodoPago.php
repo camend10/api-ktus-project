@@ -2,23 +2,28 @@
 
 namespace App\Models\Configuracion;
 
-use App\Models\Articulos\Articulo;
 use App\Models\Empresa;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
-class Bodega extends Model
+class MetodoPago extends Model
 {
     use HasFactory;
 
-    protected $table = 'bodegas';
+    protected $table = 'metodo_pago';
+
+    protected $casts = [
+        'metodo_pago_id' => 'integer',
+        'empresa_id' => 'integer',
+        'estado' => 'integer',
+    ];
+
 
     protected $fillable = [
         'nombre',
-        'descripcion',
         'empresa_id',
-        'sede_id',
+        'metodo_pago_id',
         'estado'
     ];
 
@@ -39,14 +44,15 @@ class Bodega extends Model
         return $this->belongsTo(Empresa::class, 'empresa_id')->withDefault();
     }
 
-    public function sede()
+    // Padre
+    public function metodo_pago()
     {
-        return $this->belongsTo(Sede::class, 'sede_id')->withDefault();
+        return $this->belongsTo(MetodoPago::class, 'metodo_pago_id')->withDefault();
     }
 
-    public function articulos()
+    // Hijo
+    public function metodo_pagos()
     {
-        return $this->belongsToMany(Articulo::class, 'bodegas_articulos', 'bodega_id', 'articulo_id')
-            ->withPivot('cantidad', 'estado', 'unidad_id');
+        return $this->hasMany(MetodoPago::class, 'metodo_pago_id');
     }
 }

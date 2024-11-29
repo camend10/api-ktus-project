@@ -2,46 +2,55 @@
 
 namespace App\Models\Configuracion;
 
-use App\Models\Articulos\Articulo;
 use App\Models\Departamento;
 use App\Models\Empresa;
 use App\Models\Municipio;
-use App\Models\User;
-use Carbon\Carbon;
+use App\Models\TipoDocumento;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Carbon\Carbon;
 
-class Sede extends Model
+class Proveedor extends Model
 {
     use HasFactory;
 
-    protected $table = 'sedes';
+    protected $table = 'proveedores';
 
     protected $fillable = [
-        'codigo',
-        'nombre',
+        'tipo_identificacion',
+        'identificacion',
+        'dv',
+        'nombres',
+        'apellidos',
+        'email',
         'direccion',
-        'telefono',
         'celular',
-        'identificacion_responsable',
-        'responsable',
-        'telefono_responsable',
-        'empresa_id',
-        'estado',
         'departamento_id',
         'municipio_id',
+        'empresa_id',
+        'imagen',
+        'estado'
+    ];
+
+    protected $casts = [
+        'empresa_id' => 'integer',
+        'estado' => 'integer',
+        'tipo_identificacion' => 'integer',
+        'dv' => 'integer',
+        'celular' => 'integer',
+        'departamento_id' => 'integer',
+        'municipio_id' => 'integer',
     ];
 
     public function setCreatedAtAttribute($value)
     {
-        // date_default_timezone_set("America/Bogota");
+        date_default_timezone_set("America/Bogota");
         $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-        // date_default_timezone_set("America/Bogota");
+        date_default_timezone_set("America/Bogota");
         $this->attributes["updated_at"] = Carbon::now();
     }
 
@@ -50,11 +59,9 @@ class Sede extends Model
         return $this->belongsTo(Empresa::class, 'empresa_id')->withDefault();
     }
 
-    public function usuarios(): BelongsToMany
+    public function tipodocumento()
     {
-        return $this->belongsToMany(User::class, 'sedes_usuarios', 'sede_id', 'usuario_id')
-                    ->withPivot('estado')
-                    ->withTimestamps();
+        return $this->belongsTo(TipoDocumento::class, 'tipo_identificacion')->withDefault();
     }
 
     public function departamento()
@@ -65,11 +72,5 @@ class Sede extends Model
     public function municipio()
     {
         return $this->belongsTo(Municipio::class)->withDefault();
-    }
-
-    public function articulos()
-    {
-        return $this->belongsToMany(Articulo::class, 'articulo_wallets', 'sede_id', 'articulo_id')
-                    ->withPivot('unidad_id', 'segmento_cliente_id', 'precio', 'estado');
     }
 }

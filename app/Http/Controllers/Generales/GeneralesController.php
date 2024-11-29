@@ -16,7 +16,6 @@ class GeneralesController extends Controller
     public function __construct(GeneralService $generalService)
     {
         $this->generalService = $generalService;
-
     }
 
     public function configuraciones(Request $request)
@@ -26,7 +25,7 @@ class GeneralesController extends Controller
         $sedes = $this->generalService->sedes($request->empresa_id);
         $tipodocumentos = $this->generalService->getTipoDocs();
         $generos = $this->generalService->generos();
-        $roles = $this->generalService->roles();        
+        $roles = $this->generalService->roles();
 
         $muni = $this->generalService->getMunicipios();
         $municipios = [];
@@ -162,4 +161,33 @@ class GeneralesController extends Controller
         }
     }
 
+    public function articulos(Request $request)
+    {
+        $bodegas = $this->generalService->bodegas($request->empresa_id);
+        $sedes = $this->generalService->sedes($request->empresa_id);
+        $empresas = $this->generalService->empresas($request->empresa_id);
+        $unidades = $this->generalService->unidades($request->empresa_id);
+        $ivas = $this->generalService->ivas($request->empresa_id);
+        $segmentos_clientes = $this->generalService->segmentos_clientes($request->empresa_id);
+        $categorias = $this->generalService->categorias($request->empresa_id);
+        $proveedores = $this->generalService->proveedores($request->empresa_id);
+
+        if ($empresas) {
+            return response()->json([
+                'unidades' => $unidades,
+                'empresas' => $empresas,
+                'sedes' => $sedes,
+                'bodegas' => $bodegas,
+                'segmentos_clientes' => $segmentos_clientes,
+                'ivas' => $ivas,
+                'categorias' => $categorias,
+                'proveedores' => $proveedores,
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 403,
+                'error' => "Lo sentimos, ocurrió un error en el servidor: ",
+            ], 500);
+        }
+    }
 }

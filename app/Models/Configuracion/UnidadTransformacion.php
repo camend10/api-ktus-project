@@ -2,25 +2,30 @@
 
 namespace App\Models\Configuracion;
 
-use App\Models\Articulos\Articulo;
 use App\Models\Empresa;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
-class Bodega extends Model
+class UnidadTransformacion extends Model
 {
     use HasFactory;
 
-    protected $table = 'bodegas';
+    protected $table = 'unidad_transformacion';
 
     protected $fillable = [
-        'nombre',
-        'descripcion',
+        'unidad_id',
+        'unidad_to_id',
         'empresa_id',
-        'sede_id',
         'estado'
     ];
+
+    protected $casts = [
+        'unidad_id' => 'integer',
+        'unidad_to_id' => 'integer',
+        'estado' => 'integer',
+        'estado' => 'integer',
+    ];    
 
     public function setCreatedAtAttribute($value)
     {
@@ -39,14 +44,8 @@ class Bodega extends Model
         return $this->belongsTo(Empresa::class, 'empresa_id')->withDefault();
     }
 
-    public function sede()
+    public function unidad_to()
     {
-        return $this->belongsTo(Sede::class, 'sede_id')->withDefault();
-    }
-
-    public function articulos()
-    {
-        return $this->belongsToMany(Articulo::class, 'bodegas_articulos', 'bodega_id', 'articulo_id')
-            ->withPivot('cantidad', 'estado', 'unidad_id');
+        return $this->belongsTo(Unidad::class, 'unidad_to_id')->withDefault();
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Usuarios;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UsuarioRequest extends FormRequest
 {
@@ -24,11 +25,30 @@ class UsuarioRequest extends FormRequest
         return match ($this->route('id') ? 'PUT' : $this->method()) {
             'POST' => [
                 'tipo_doc_id' => 'required',
-                'identificacion' => 'required|max:20|unique:users,identificacion',
+                'identificacion' => [
+                    'required',
+                    'max:20',
+                    Rule::unique('users')->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
                 'name' => 'required|string|max:50',
-                'email' => 'required|email|max:100|unique:users,email',
+                'email' => [
+                    'required',
+                    'email',
+                    'max:100',
+                    Rule::unique('users')->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
                 'password' => 'required|string|min:8|max:30',
-                'usuario' => 'required|max:20|unique:users,usuario',
+                'usuario' => [
+                    'required',
+                    'max:20',
+                    Rule::unique('users')->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
                 'direccion' => 'string|nullable',
                 'celular' => 'required',
                 'estado' => 'integer|nullable',
@@ -44,11 +64,30 @@ class UsuarioRequest extends FormRequest
             ],
             'PUT' =>  [
                 'tipo_doc_id' => 'required',
-                'identificacion' => 'required|max:20|unique:users,identificacion,' . $this->id,
+                'identificacion' => [
+                    'required',
+                    'max:20',
+                    Rule::unique('users')->ignore($this->id)->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
                 'name' => 'required|string|max:50',
-                'email' => 'required|email|max:100|unique:users,email,' . $this->id,
-                'password' => 'required|string|min:8|max:30',
-                'usuario' => 'required|max:20|unique:users,usuario,' . $this->id,
+                'email' => [
+                    'required',
+                    'email',
+                    'max:100',
+                    Rule::unique('users')->ignore($this->id)->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
+                'password' => 'string|min:8|max:30|nullable',
+                'usuario' => [
+                    'required',
+                    'max:20',
+                    Rule::unique('users')->ignore($this->id)->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
                 'direccion' => 'string|nullable',
                 'celular' => 'required',
                 'estado' => 'integer|nullable',
@@ -70,7 +109,7 @@ class UsuarioRequest extends FormRequest
         return [
             'tipo_doc_id.required' => 'El tipo de identificación es obligatorio',
             'identificacion.required' => 'La identificación es obligatoria',
-            'identificacion.unique' => 'La identificación ya existe',
+            'identificacion.unique' => 'Ya existe un registro con esta identificación para la empresa seleccionada',
             'identificacion.max' => 'El maximo de caracteres de la identificacion es 20',
             'name.required' => 'El nombre es obligatorio',
             'name.string' => 'El nombre debe ser una cadena de caracteres',
@@ -78,14 +117,14 @@ class UsuarioRequest extends FormRequest
             'email.email' => 'Correo no valido',
             'email.required' => 'El correo es obligatorio',
             'email.max' => 'El maximo de caracteres del email es 100',
-            'email.unique' => 'El correo ya existe',
+            'email.unique' => 'Ya existe un registro con este correo para la empresa seleccionada',
             'password.required' => 'La clave es obligatoria',
             // 'password.confirmed' => 'Las claves no coinciden',
             'password.string' => 'La clave debe ser una cadena de caracteres',
             'password.max' => 'El maximo de caracteres de la clave es 30',
             'password.min' => 'El minimo de caracteres de la clave es 8',
             'usuario.required' => 'El nombre de usuario es obligatoria',
-            'usuario.unique' => 'El nombre de usuario ya existe',
+            'usuario.unique' => 'Ya existe un registro con este usuario para la empresa seleccionada',
             'usuario.max' => 'El maximo de caracteres del nombre de usuario es 20',
             // 'password_confirmation.required' => 'Confirmar la clave es obligatorio',
             'celular.required' => 'El celular es obligatorio',

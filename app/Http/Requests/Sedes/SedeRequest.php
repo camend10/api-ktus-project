@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Sedes;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SedeRequest extends FormRequest
 {
@@ -23,8 +24,20 @@ class SedeRequest extends FormRequest
     {
         return match ($this->method()) {
             'POST' =>  [
-                'codigo' => 'required|string|max:20|unique:sedes,codigo',
-                'nombre' => 'required|string|max:100|unique:sedes,nombre',
+                'codigo' => [
+                    'required',
+                    'max:20',
+                    Rule::unique('sedes')->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
+                'nombre' => [
+                    'required',
+                    'max:100',
+                    Rule::unique('sedes')->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
                 'direccion' => 'required',
                 'celular' => 'required|integer',
                 'telefono' => 'nullable',
@@ -37,8 +50,20 @@ class SedeRequest extends FormRequest
                 'municipio_id' => 'required',
             ],
             'PUT' =>  [
-                'codigo' => 'required|string|max:20|unique:sedes,codigo,' . $this->id,
-                'nombre' => 'required|string|max:100|unique:sedes,nombre,' . $this->id,
+                'codigo' => [
+                    'required',
+                    'max:20',
+                    Rule::unique('sedes')->ignore($this->id)->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
+                'nombre' => [
+                    'required',
+                    'max:100',
+                    Rule::unique('sedes')->ignore($this->id)->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                    }),
+                ],
                 'direccion' => 'required',
                 'celular' => 'required|integer',
                 'telefono' => 'nullable',
@@ -59,11 +84,11 @@ class SedeRequest extends FormRequest
             'codigo.required' => 'El codigo es obligatorio',
             'codigo.string' => 'El codigo debe ser una cadena de caracteres',
             'codigo.max' => 'El maximo de caracteres del codigo es 20',
-            'codigo.unique' => 'El codigo ya existe',
+            'codigo.unique' => 'Ya existe un registro con este código para la empresa seleccionada',
             'nombre.required' => 'El nombre es obligatorio',
             'nombre.string' => 'El nombre debe ser una cadena de caracteres',
             'nombre.max' => 'El maximo de caracteres del nombre es 100',
-            'nombre.unique' => 'El nombre ya existe',
+            'nombre.unique' => 'Ya existe un registro con este nombre para la empresa seleccionada',
             'celular.required' => 'El celular es obligatorio',
             'celular.integer' => 'El celular debe contener solo numeros',
             'direccion.required' => 'La dirección es obligatoria',
