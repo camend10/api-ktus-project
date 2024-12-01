@@ -190,6 +190,16 @@ class ArticuloService
         return Articulo::findOrFail($id);
     }
 
+    public function getAllArticulo($data)
+    {
+
+        return Articulo::FilterAdvance($data)
+            ->where('estado', 1)
+            ->where('empresa_id', $data["empresa_id"])
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
     public function storeWallet($request)
     {
         $user = auth('api')->user();
@@ -198,7 +208,7 @@ class ArticuloService
         }
 
         $resp = ArticuloWallet::create([
-            'articulo_id' => $request['articulo_id'], 
+            'articulo_id' => $request['articulo_id'],
             'unidad_id' => $request['unidad_id'],
             'precio' => $request['precio'],
             'estado' => 1,
@@ -220,7 +230,7 @@ class ArticuloService
         }
 
         $resp->update([
-            'articulo_id' => $request['articulo_id'], 
+            'articulo_id' => $request['articulo_id'],
             'unidad_id' => $request['unidad_id'],
             'precio' => $request['precio'],
             'estado' => 1,
@@ -248,13 +258,13 @@ class ArticuloService
             return false;
         }
 
-        $resp = BodegaArticulo::create([        
-            'articulo_id' => $request['articulo_id'], 
-            'bodega_id' => $request['bodega_id'], 
+        $resp = BodegaArticulo::create([
+            'articulo_id' => $request['articulo_id'],
+            'bodega_id' => $request['bodega_id'],
             'cantidad' =>  $request['cantidad'],
             'estado' => 1,
             'unidad_id' => $request['unidad_id'],
-            'empresa_id' => $user->empresa_id,            
+            'empresa_id' => $user->empresa_id,
         ]);
 
         return $resp;
@@ -269,12 +279,12 @@ class ArticuloService
             return false;
         }
 
-        $resp->update([     
+        $resp->update([
             'bodega_id' => $request['bodega_id'], // Incluye explícitamente el id de la bodega como campo
             'cantidad' =>  $request['cantidad'],
             'estado' => 1,
             'unidad_id' => $request['unidad_id'],
-            'empresa_id' => $user->empresa_id,            
+            'empresa_id' => $user->empresa_id,
         ]);
 
         return $resp;

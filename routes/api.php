@@ -116,4 +116,8 @@ Route::group([
 
     Route::resource("articulos-wallets", ArticuloWalletController::class);
     Route::resource("bodegas-articulos", BodegaArticuloController::class);
+
+    Route::post('/articulos/import/excel', [ArticuloController::class, 'import_articulo']);
 });
+
+Route::get('/excel/export-articulo', [ArticuloController::class, 'export_articulo']);

@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Articulos;
 
+use App\Exports\Articulo\DownloadArticulo;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Articulos\ArticuloRequest;
+use App\Http\Requests\Articulos\ImportArticuloRequest;
 use App\Http\Resources\Articulo\ArticuloCollection;
 use App\Http\Resources\Articulo\ArticuloResource;
+use App\Imports\ArticuloImport;
 use App\Models\Articulos\Articulo;
 use App\Services\Articulos\ArticuloService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ArticuloController extends Controller
 {
@@ -164,6 +168,29 @@ class ArticuloController extends Controller
             'message' => 200,
             'message_text' => $texto,
             'articulo' => $articulo
+        ]);
+    }
+
+    public function export_articulo(Request $request)
+    {
+        $data = $request->all();
+
+        $articulos = $this->articuloService->getAllArticulo($data);
+
+        return Excel::download(new DownloadArticulo($articulos), 'Articulos_descargados.xlsx');
+    }
+
+    public function import_articulo(ImportArticuloRequest $request)
+    {
+        $validated = $request->validated();
+
+        $path = $request->file('import_file');
+
+        $data = Excel::import(new ArticuloImport(), $path);
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => 'Los articulo han sido importados exitosamente',
         ]);
     }
 }
