@@ -30,8 +30,8 @@ class ArticuloImport implements ToModel, WithHeadingRow, WithValidation
 
     public function model(array $row)
     {
-
         try {
+
             $user = auth('api')->user();
             if (!$user) {
                 return Articulo::first();

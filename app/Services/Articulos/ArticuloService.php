@@ -23,6 +23,19 @@ class ArticuloService
             ->paginate(20);
     }
 
+    public function getByDisponibilidad($state_stock)
+    {
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        return Articulo::where('state_stock', $state_stock)
+            ->where('empresa_id', $user->empresa_id)
+            ->count();
+    }
+
     public function store($request)
     {
         $user = auth('api')->user();
@@ -188,6 +201,22 @@ class ArticuloService
     public function getArticuloById($id)
     {
         return Articulo::findOrFail($id);
+    }
+
+    public function generarSku($categoria_id, $prefijo)
+    {
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Obtener el SKU más alto de la categoría seleccionada
+        return Articulo::where('empresa_id', $user->empresa_id)
+            ->where('categoria_id', $categoria_id)
+            ->where('sku', 'LIKE', "$prefijo%")
+            ->orderByRaw("CAST(SUBSTRING(sku, 4, LEN(sku) - 3) AS INT) DESC")
+            ->value('sku');
     }
 
     public function getAllArticulo($data)

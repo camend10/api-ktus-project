@@ -47,11 +47,14 @@ class Articulo extends Model
         'punto_pedido_unidad_id',
         'is_discount',
         'impuesto',
-        'proveedor_id'
+        'proveedor_id',
+        'state_stock'
     ];
 
     protected $casts = [
         'especificaciones' => 'array',
+        'state_stock' => 'integer',
+        'estado' => 'integer',
     ];
     
     // protected $casts = [
@@ -144,6 +147,7 @@ class Articulo extends Model
         $data['bodega_id'] = isset($data['bodega_id']) && $data['bodega_id'] == 9999999 ? null : $data['bodega_id'];
         $data['unidad_id_bodegas'] = isset($data['unidad_id_bodegas']) && $data['unidad_id_bodegas'] == 9999999 ? null : $data['unidad_id_bodegas'];
         $data['proveedor_id'] = isset($data['proveedor_id']) && $data['proveedor_id'] == 9999999 ? null : $data['proveedor_id'];
+        $data['state_stock'] = isset($data['state_stock']) && $data['state_stock'] == 9999999 ? null : $data['state_stock'];
 
         $query->when($data['buscar'], function ($sql) use ($data) {
             $sql->where(DB::raw("CONCAT(articulos.nombre,' ',articulos.sku)"), 'like', '%' . $data['buscar'] . '%'); 
@@ -152,6 +156,11 @@ class Articulo extends Model
         // Filtro por categoría
         $query->when(isset($data['categoria_id']), function ($sql) use ($data) {
             $sql->where('categoria_id', $data['categoria_id']);
+        });
+
+        // Filtro por disponibilidad
+        $query->when(isset($data['state_stock']), function ($sql) use ($data) {
+            $sql->where('state_stock', $data['state_stock']);
         });
 
         // Filtro por impuesto

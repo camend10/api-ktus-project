@@ -11,6 +11,7 @@ use App\Http\Resources\Articulo\ArticuloResource;
 use App\Imports\ArticuloImport;
 use App\Models\Articulos\Articulo;
 use App\Services\Articulos\ArticuloService;
+use App\Services\Configuracion\CategoriaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -19,10 +20,12 @@ use Maatwebsite\Excel\Facades\Excel;
 class ArticuloController extends Controller
 {
     protected $articuloService;
+    protected $categoriaService;
 
-    public function __construct(ArticuloService $articuloService)
+    public function __construct(ArticuloService $articuloService, CategoriaService $categoriaService)
     {
         $this->articuloService = $articuloService;
+        $this->categoriaService = $categoriaService;
     }
 
     /**
@@ -40,9 +43,14 @@ class ArticuloController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
+        $num_art_agotados = $this->articuloService->getByDisponibilidad(3);
+        $num_art_por_agotar = $this->articuloService->getByDisponibilidad(2);
+
         return response()->json([
             'total' => $articulos->total(),
-            'articulos' => ArticuloCollection::make($articulos)
+            'articulos' => ArticuloCollection::make($articulos),
+            'num_art_agotados' => $num_art_agotados,
+            'num_art_por_agotar' => $num_art_por_agotar
         ]);
     }
 
@@ -167,7 +175,7 @@ class ArticuloController extends Controller
         return response()->json([
             'message' => 200,
             'message_text' => $texto,
-            'articulo' => $articulo
+            'articulo' => ArticuloResource::make($articulo)
         ]);
     }
 
@@ -190,7 +198,39 @@ class ArticuloController extends Controller
 
         return response()->json([
             'message' => 200,
-            'message_text' => 'Los articulo han sido importados exitosamente',
+            'message_text' => 'Los articulos han sido importados exitosamente',
+        ]);
+    }
+
+    public function generarSku($categoria_id)
+    {
+
+        // Obtener el nombre de la categoría (para usar como prefijo)
+        $categoria = $this->categoriaService->getCategoriaById($categoria_id);
+
+        if (!$categoria) {
+            return response()->json(['error' => 'Categoría no encontrada'], 404);
+        }
+
+        $prefijo = strtoupper(substr($categoria->nombre, 0, 3)); // Prefijo basado en el nombre de la categoría
+
+        // Obtener el SKU más alto de la categoría seleccionada
+        $ultimoSku = $this->articuloService->generarSku($categoria_id, $prefijo);
+
+        // Determinar el consecutivo
+        $consecutivo = 1; // Si no hay artículos en esta categoría, el consecutivo empieza en 1
+        if ($ultimoSku) {
+            $consecutivo = (int) substr($ultimoSku, 3) + 1; // Extraer el consecutivo y sumarle 1
+        }
+
+        // Crear el nuevo SKU
+        // Crear el nuevo SKU
+        $nuevoSku = $prefijo . str_pad($consecutivo, 4, '0', STR_PAD_LEFT);    
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => '',
+            'sku' => $nuevoSku
         ]);
     }
 }

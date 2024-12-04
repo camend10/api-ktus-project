@@ -4,6 +4,7 @@ use App\Http\Controllers\Articulos\ArticuloController;
 use App\Http\Controllers\Articulos\ArticuloWalletController;
 use App\Http\Controllers\Articulos\BodegaArticuloController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Configuracion\BodegaController;
 use App\Http\Controllers\Configuracion\CategoriaController;
 use App\Http\Controllers\Configuracion\EmpresaController;
@@ -118,6 +119,19 @@ Route::group([
     Route::resource("bodegas-articulos", BodegaArticuloController::class);
 
     Route::post('/articulos/import/excel', [ArticuloController::class, 'import_articulo']);
+    Route::get('/articulos/generar-sku/{categoria_id}', [ArticuloController::class, 'generarSku']);
 });
 
 Route::get('/excel/export-articulo', [ArticuloController::class, 'export_articulo']);
+
+Route::group([
+    'middleware' => 'auth:api',
+], function ($router) {
+
+    Route::post('/clientes/index', [ClienteController::class, 'index']);
+    Route::patch('/clientes/{id}/cambiar-estado', [ClienteController::class, 'cambiarEstado']);
+    Route::resource("clientes", ClienteController::class);
+
+    Route::post('/clientes/import/excel', [ClienteController::class, 'import_clientes']);
+});
+Route::get('/excel/export-clientes', [ClienteController::class, 'export_clientes']);

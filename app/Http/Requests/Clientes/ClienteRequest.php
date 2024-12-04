@@ -1,12 +1,23 @@
 <?php
 
-namespace App\Http\Requests\Proveedores;
+namespace App\Http\Requests\Clientes;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
-class ProveedorRequest extends FormRequest
+class ClienteRequest extends FormRequest
 {
+    protected function prepareForValidation()
+    {
+        // Registra los datos que llegan al request
+        // Log::info('Datos recibidos en ClienteRequest:', $this->all());
+
+        // Si necesitas detener la ejecución para depurar:
+        // dd($this->all());
+    }
+
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -28,25 +39,26 @@ class ProveedorRequest extends FormRequest
                     'required',
                     'string',
                     'max:100',
-                    Rule::unique('proveedores')->where(function ($query) {
+                    Rule::unique('clientes')->where(function ($query) {
                         return $query->where('empresa_id', $this->empresa_id);
                     })
                 ],
                 'tipo_identificacion' => 'required',
                 'identificacion' => [
                     'required',
-                    Rule::unique('proveedores')->where(function ($query) {
+                    Rule::unique('clientes')->where(function ($query) {
                         return $query->where('empresa_id', $this->empresa_id);
                     })
                 ],
                 'dv' => 'nullable',
                 'apellidos' => 'nullable',
                 'email' => [
-                    'required',
+                    'nullable',
                     'email',
                     'max:100',
-                    Rule::unique('proveedores')->where(function ($query) {
-                        return $query->where('empresa_id', $this->empresa_id);;
+                    Rule::unique('clientes')->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                        ;
                     })
                 ],
                 'direccion' => 'nullable',
@@ -54,33 +66,40 @@ class ProveedorRequest extends FormRequest
                 'departamento_id' => 'required',
                 'municipio_id' => 'required',
                 'empresa_id' => 'required',
-                'imagen' => 'nullable|file|image|max:2048',
-                'estado' => 'integer|nullable'
+                'sede_id' => 'integer|nullable',
+                'estado' => 'integer|nullable',
+                // 'fecha_nacimiento' => 'nullable',
+                'fecha_nacimiento' => 'nullable|date_format:Y-m-d',
+                'user_id' => 'integer|nullable',
+                'is_parcial' => 'integer|nullable',
+                'genero_id' => 'integer|nullable',
+                'segmento_cliente_id' => 'required',
             ],
-            'PUT' => [                
+            'PUT' => [
                 'nombres' => [
                     'required',
                     'string',
                     'max:100',
-                    Rule::unique('proveedores')->where(function ($query) {
+                    Rule::unique('clientes')->where(function ($query) {
                         return $query->where('empresa_id', $this->empresa_id);
                     })->ignore($this->id)
                 ],
                 'tipo_identificacion' => 'required',
                 'identificacion' => [
                     'required',
-                    Rule::unique('proveedores')->where(function ($query) {
+                    Rule::unique('clientes')->where(function ($query) {
                         return $query->where('empresa_id', $this->empresa_id);
                     })->ignore($this->id)
                 ],
                 'dv' => 'nullable',
                 'apellidos' => 'nullable',
                 'email' => [
-                    'required',
+                    'nullable',
                     'email',
                     'max:100',
-                    Rule::unique('proveedores')->where(function ($query) {
-                        return $query->where('empresa_id', $this->empresa_id);;
+                    Rule::unique('clientes')->where(function ($query) {
+                        return $query->where('empresa_id', $this->empresa_id);
+                        ;
                     })->ignore($this->id)
                 ],
                 'direccion' => 'nullable',
@@ -88,8 +107,14 @@ class ProveedorRequest extends FormRequest
                 'departamento_id' => 'required',
                 'municipio_id' => 'required',
                 'empresa_id' => 'required',
-                'imagen' => 'nullable|file|image|max:2048',
-                'estado' => 'integer|nullable'
+                'sede_id' => 'integer|nullable',
+                'estado' => 'integer|nullable',
+                // 'fecha_nacimiento' => 'nullable',
+                'fecha_nacimiento' => 'nullable|date_format:Y-m-d',
+                'user_id' => 'integer|nullable',
+                'is_parcial' => 'integer|nullable',
+                'genero_id' => 'integer|nullable',
+                'segmento_cliente_id' => 'required',
             ],
         };
     }
@@ -112,6 +137,10 @@ class ProveedorRequest extends FormRequest
             'departamento_id.required' => 'El departamento es obligatorio',
             'municipio_id.required' => 'El municipio es obligatorio',
             'empresa_id.required' => 'La empresa es obligatoria',
+            'segmento_cliente_id.required' => 'El segmento de cliente es obligatorio',
+            'date_format' => 'El campo :attribute no coincide con el formato :format.',
+
+
         ];
     }
 }

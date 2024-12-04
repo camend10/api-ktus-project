@@ -26,6 +26,7 @@ class GeneralesController extends Controller
         $tipodocumentos = $this->generalService->getTipoDocs();
         $generos = $this->generalService->generos();
         $roles = $this->generalService->roles();
+        $segmentos_clientes = $this->generalService->segmentos_clientes($request->empresa_id);
 
         $muni = $this->generalService->getMunicipios();
         $municipios = [];
@@ -54,6 +55,7 @@ class GeneralesController extends Controller
                 'roles' => $roles,
                 'municipios' => $municipios,
                 'arraySedes' => $arraySedes,
+                'segmentos_clientes' => $segmentos_clientes,
             ], 200);
         } else {
             return response()->json([

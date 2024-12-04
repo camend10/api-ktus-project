@@ -5,6 +5,7 @@ namespace App\Providers;
 // use Illuminate\Support\Facades\Gate;
 
 use App\Models\Articulos\Articulo;
+use App\Models\Clientes\Cliente;
 use App\Models\Configuracion\Bodega;
 use App\Models\Configuracion\Categoria;
 use App\Models\Configuracion\Iva;
@@ -14,10 +15,13 @@ use App\Models\Configuracion\Sede;
 use App\Models\Configuracion\SedeDeliverie;
 use App\Models\Configuracion\SegmentoCliente;
 use App\Models\Configuracion\Unidad;
+use App\Models\Facturas\Factura;
 use App\Models\User;
 use App\Policies\ArticuloPolicy;
 use App\Policies\BodegaPolicy;
 use App\Policies\CategoriaPolicy;
+use App\Policies\ClientePolicy;
+use App\Policies\FacturaPolicy;
 use App\Policies\IvaPolicy;
 use App\Policies\MetodoPagoPolicy;
 use App\Policies\ProveedorPolicy;
@@ -51,6 +55,8 @@ class AuthServiceProvider extends ServiceProvider
         Unidad::class => UnidadPolicy::class,
         Iva::class => IvaPolicy::class,
         Articulo::class => ArticuloPolicy::class,
+        Cliente::class => ClientePolicy::class,
+        Factura::class => FacturaPolicy::class,
     ];
 
     /**

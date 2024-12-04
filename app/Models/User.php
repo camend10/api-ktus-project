@@ -122,4 +122,9 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo(Municipio::class)->withDefault();
     }
+
+    public function genero()
+    {
+        return $this->belongsTo(Genero::class, 'genero_id')->withDefault();
+    }
 }
