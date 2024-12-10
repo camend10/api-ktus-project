@@ -183,7 +183,7 @@ class ArticuloController extends Controller
     {
         $data = $request->all();
 
-        $articulos = $this->articuloService->getAllArticulo($data);
+        $articulos = $this->articuloService->getAllArticulos($data);
 
         return Excel::download(new DownloadArticulo($articulos), 'Articulos_descargados.xlsx');
     }
@@ -225,12 +225,27 @@ class ArticuloController extends Controller
 
         // Crear el nuevo SKU
         // Crear el nuevo SKU
-        $nuevoSku = $prefijo . str_pad($consecutivo, 4, '0', STR_PAD_LEFT);    
+        $nuevoSku = $prefijo . str_pad($consecutivo, 4, '0', STR_PAD_LEFT);
 
         return response()->json([
             'message' => 200,
             'message_text' => '',
             'sku' => $nuevoSku
+        ]);
+    }
+
+    public function buscarArticulos(Request $request)
+    {
+        $data = $request->all();
+        
+        $articulos = $this->articuloService->getAllArticulos($data);
+
+        if (!$articulos) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        return response()->json([
+            'articulos' => ArticuloCollection::make($articulos),
         ]);
     }
 }

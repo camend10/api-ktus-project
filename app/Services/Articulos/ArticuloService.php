@@ -219,7 +219,7 @@ class ArticuloService
             ->value('sku');
     }
 
-    public function getAllArticulo($data)
+    public function getAllArticulos($data)
     {
 
         return Articulo::FilterAdvance($data)
@@ -227,6 +227,9 @@ class ArticuloService
             ->where('empresa_id', $data["empresa_id"])
             ->orderBy('id', 'desc')
             ->get();
+
+        // logger($query->toSql()); // Registra la consulta SQL
+        // logger($query->getBindings()); // Registra los valores de los parámetros
     }
 
     public function storeWallet($request)

@@ -7,6 +7,7 @@ use App\Models\Configuracion\Categoria;
 use App\Models\Configuracion\Iva;
 use App\Models\Configuracion\Proveedor;
 use App\Models\Configuracion\Sede;
+use App\Models\Configuracion\SedeDeliverie;
 use App\Models\Configuracion\SegmentoCliente;
 use App\Models\Configuracion\Unidad;
 use App\Models\Departamento;
@@ -96,6 +97,13 @@ class GeneralService
     {
         return Proveedor::with(['tipodocumento'])
             ->where('empresa_id', $empresa_id)
+            ->where('estado', 1)
+            ->get();
+    }
+
+    public function sedeDeliveries($empresa_id)
+    {
+        return SedeDeliverie::where('empresa_id', $empresa_id)
             ->where('estado', 1)
             ->get();
     }

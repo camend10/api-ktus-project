@@ -123,7 +123,7 @@ class ClienteController extends Controller
     public function import_clientes(ImportClienteRequest $request)
     {
         $validated = $request->validated();
-        
+
         $path = $request->file('import_file');
 
         $data = Excel::import(new ClienteImport(), $path);
@@ -131,6 +131,21 @@ class ClienteController extends Controller
         return response()->json([
             'message' => 200,
             'message_text' => 'Los clientes han sido importados exitosamente',
+        ]);
+    }
+
+    public function buscarClientes(Request $request)
+    {
+        $data = $request->all();
+
+        $clientes = $this->clienteService->getAllClientes($data);
+
+        if (!$clientes) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        return response()->json([
+            'clientes' => ClienteCollection::make($clientes),
         ]);
     }
 }

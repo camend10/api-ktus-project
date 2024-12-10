@@ -6,6 +6,7 @@ use App\Models\Articulos\Articulo;
 use App\Models\Configuracion\Categoria;
 use App\Models\Configuracion\Iva;
 use App\Models\Configuracion\Sede;
+use App\Models\Configuracion\Unidad;
 use App\Models\Empresa;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +31,8 @@ class DetalleFactura extends Model
         'estado',
         'categoria_id',
         'descuento',
-        'sub_total'
+        'sub_total',
+        'unidad_id',
     ];
 
     public function setCreatedAtAttribute($value)
@@ -74,5 +76,10 @@ class DetalleFactura extends Model
     {
         return $this->belongsTo(Articulo::class, 'articulo_id')->withDefault();
     }
-    
+
+    public function unidad()
+    {
+        return $this->belongsTo(Unidad::class, 'unidad_id')->withDefault();
+    }
+
 }

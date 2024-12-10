@@ -19,6 +19,12 @@ class Iva extends Model
         'estado'
     ];
 
+    protected $casts = [
+        'porcentaje' => 'float', // Porcentaje será un número decimal
+        'estado' => 'integer',
+        'empresa_id' => 'integer',
+    ];
+
     public function setCreatedAtAttribute($value)
     {
         date_default_timezone_set("America/Bogota");

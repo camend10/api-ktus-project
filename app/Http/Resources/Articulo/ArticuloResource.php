@@ -4,6 +4,7 @@ namespace App\Http\Resources\Articulo;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class ArticuloResource extends JsonResource
 {
@@ -14,6 +15,11 @@ class ArticuloResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $unidades = collect([]);
+        // Log::info('Cliente creado o actualizado:', ['cliente' => $this->resource->articulos_wallets->toArray()]);
+        foreach ($this->resource->articulos_wallets->groupBy('unidad_id') as $value) {
+            $unidades->push($value[0]->unidad);
+        }
         return [
             'id' => $this->resource->id,
             'sku' => $this->resource->sku,
@@ -71,6 +77,7 @@ class ArticuloResource extends JsonResource
                     "segmento_cliente_id_premul" => $wallet->segmento_cliente ? $wallet->segmento_cliente->id : null,
                 ];
             }),
+            'unidades' => $unidades
         ];
     }
 }

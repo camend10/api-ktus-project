@@ -55,8 +55,14 @@ class Articulo extends Model
         'especificaciones' => 'array',
         'state_stock' => 'integer',
         'estado' => 'integer',
+        'is_discount' => 'integer',
+        'empresa_id' => 'integer',
+        'categoria_id' => 'integer',
+        'proveedor_id' => 'integer',
+        'impuesto' => 'integer',
+        'disponibilidad' => 'integer',
     ];
-    
+
     // protected $casts = [
     //     'precio_general' => 'numeric',
     //     'existencia' => 'integer',
@@ -140,17 +146,17 @@ class Articulo extends Model
     public function scopeFilterAdvance($query, $data)
     {
         // Normaliza los valores especiales
-        $data['categoria_id'] = isset($data['categoria_id']) && $data['categoria_id'] == 9999999 ? null : $data['categoria_id'];
-        $data['impuesto'] = isset($data['impuesto']) && $data['impuesto'] == 9999999 ? null : $data['impuesto'];
-        $data['sede_id'] = isset($data['sede_id']) && $data['sede_id'] == 9999999 ? null : $data['sede_id'];
-        $data['segmento_cliente_id'] = isset($data['segmento_cliente_id']) && $data['segmento_cliente_id'] == 9999999 ? null : $data['segmento_cliente_id'];
-        $data['bodega_id'] = isset($data['bodega_id']) && $data['bodega_id'] == 9999999 ? null : $data['bodega_id'];
-        $data['unidad_id_bodegas'] = isset($data['unidad_id_bodegas']) && $data['unidad_id_bodegas'] == 9999999 ? null : $data['unidad_id_bodegas'];
-        $data['proveedor_id'] = isset($data['proveedor_id']) && $data['proveedor_id'] == 9999999 ? null : $data['proveedor_id'];
-        $data['state_stock'] = isset($data['state_stock']) && $data['state_stock'] == 9999999 ? null : $data['state_stock'];
+        $data['categoria_id'] = isset($data['categoria_id']) && $data['categoria_id'] == 9999999 ? null : ($data['categoria_id'] ?? null);
+        $data['impuesto'] = isset($data['impuesto']) && $data['impuesto'] == 9999999 ? null : ($data['impuesto'] ?? null);
+        $data['sede_id'] = isset($data['sede_id']) && $data['sede_id'] == 9999999 ? null : ($data['sede_id'] ?? null);
+        $data['segmento_cliente_id'] = isset($data['segmento_cliente_id']) && $data['segmento_cliente_id'] == 9999999 ? null : ($data['segmento_cliente_id'] ?? null);
+        $data['bodega_id'] = isset($data['bodega_id']) && $data['bodega_id'] == 9999999 ? null : ($data['bodega_id'] ?? null);
+        $data['unidad_id_bodegas'] = isset($data['unidad_id_bodegas']) && $data['unidad_id_bodegas'] == 9999999 ? null : ($data['unidad_id_bodegas'] ?? null);
+        $data['proveedor_id'] = isset($data['proveedor_id']) && $data['proveedor_id'] == 9999999 ? null : ($data['proveedor_id'] ?? null);
+        $data['state_stock'] = isset($data['state_stock']) && $data['state_stock'] == 9999999 ? null : ($data['state_stock'] ?? null);
 
         $query->when($data['buscar'], function ($sql) use ($data) {
-            $sql->where(DB::raw("CONCAT(articulos.nombre,' ',articulos.sku)"), 'like', '%' . $data['buscar'] . '%'); 
+            $sql->where(DB::raw("CONCAT(articulos.nombre,' ',articulos.sku)"), 'like', '%' . $data['buscar'] . '%');
         });
 
         // Filtro por categoría

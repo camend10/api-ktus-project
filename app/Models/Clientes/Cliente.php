@@ -111,9 +111,13 @@ class Cliente extends Model
 
     public function scopeFilterAdvance($query, $data)
     {
-        // Normaliza los valores especiales
-        $data['segmento_cliente_id'] = isset($data['segmento_cliente_id']) && $data['segmento_cliente_id'] == 9999999 ? null : $data['segmento_cliente_id'];
-        $data['tipo'] = isset($data['tipo']) && $data['tipo'] == 9999999 ? null : $data['tipo'];
+        // Inicializa las claves opcionales con valores nulos si no están definidas
+        $data['segmento_cliente_id'] = isset($data['segmento_cliente_id']) && $data['segmento_cliente_id'] == 9999999 ? null : ($data['segmento_cliente_id'] ?? null);
+        $data['tipo'] = isset($data['tipo']) && $data['tipo'] == 9999999 ? null : ($data['tipo'] ?? null);
+        $data['buscar'] = $data['buscar'] ?? null;
+        $data['identificacion'] = $data['identificacion'] ?? null;
+        $data['nombres'] = $data['nombres'] ?? null;
+        $data['celular'] = $data['celular'] ?? null;
 
         $query->when($data['buscar'], function ($sql) use ($data) {
             $sql->where(DB::raw("CONCAT(clientes.nombres,' ',clientes.apellidos, ' ',
@@ -123,6 +127,27 @@ class Cliente extends Model
         // Filtro por categoría
         $query->when(isset($data['tipo']), function ($sql) use ($data) {
             $sql->where('tipo_identificacion', $data['tipo']);
+        });
+
+        // Filtro por identificacion
+        $query->when(isset($data['identificacion']), function ($sql) use ($data) {
+            $sql->where('identificacion', 'like', '%' . $data['identificacion'] . '%');
+        });
+
+        // Filtro por nombres
+        $query->when(isset($data['nombres']), function ($sql) use ($data) {
+            // Buscar solo en el campo 'nombres' primero (para clientes tipo empresa)
+            $sql->where('nombres', 'like', '%' . $data['nombres'] . '%');
+            
+            // Si el campo 'apellidos' está lleno, buscar también en la concatenación de nombres y apellidos (para clientes tipo natural)
+            $sql->orWhereRaw("CONCAT(nombres, ' ', apellidos) LIKE ?", ['%' . $data['nombres'] . '%']);
+        });
+        
+
+
+        // Filtro por celular
+        $query->when(isset($data['celular']), function ($sql) use ($data) {
+            $sql->where('celular', 'like', '%' . $data['celular'] . '%');
         });
 
         $query->when(isset($data['segmento_cliente_id']), function ($sql) use ($data) {
