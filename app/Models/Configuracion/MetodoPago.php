@@ -13,18 +13,17 @@ class MetodoPago extends Model
 
     protected $table = 'metodo_pago';
 
-    protected $casts = [
-        'metodo_pago_id' => 'integer',
-        'empresa_id' => 'integer',
-        'estado' => 'integer',
-    ];
-
-
     protected $fillable = [
         'nombre',
         'empresa_id',
         'metodo_pago_id',
         'estado'
+    ];
+
+    protected $casts = [
+        'metodo_pago_id' => 'integer',
+        'empresa_id' => 'integer',
+        'estado' => 'integer',
     ];
 
     public function setCreatedAtAttribute($value)

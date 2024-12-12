@@ -23,7 +23,9 @@ class FacturaPago extends Model
         'n_transaccion',
         'empresa_id',
         'sede_id',
-        'estado'
+        'estado',
+        'banco_id',
+        'imagen',
     ];
 
     public function setCreatedAtAttribute($value)

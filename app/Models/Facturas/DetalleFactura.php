@@ -33,6 +33,7 @@ class DetalleFactura extends Model
         'descuento',
         'sub_total',
         'unidad_id',
+        'total_descuento'
     ];
 
     public function setCreatedAtAttribute($value)

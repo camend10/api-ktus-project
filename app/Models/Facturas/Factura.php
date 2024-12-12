@@ -22,7 +22,6 @@ class Factura extends Model
         'total_descuento',
         'total_iva',
         'descripcion',
-        'domicilio',
         'user_id',
         'cliente_id',
         'empresa_id',
@@ -73,5 +72,13 @@ class Factura extends Model
     public function segmento()
     {
         return $this->belongsTo(SegmentoCliente::class, 'segmento_cliente_id')->withDefault();
+    }
+
+    /**
+     * Relación con DetalleFactura
+     */
+    public function detalles_facturas()
+    {
+        return $this->hasMany(DetalleFactura::class, 'factura_id');
     }
 }

@@ -28,6 +28,7 @@ class GeneralesController extends Controller
         $roles = $this->generalService->roles();
         $segmentos_clientes = $this->generalService->segmentos_clientes($request->empresa_id);
         $sede_deliveries = $this->generalService->sedeDeliveries($request->empresa_id);
+        $metodos_pagos = $this->generalService->metodoPagos($request->empresa_id);
 
         $muni = $this->generalService->getMunicipios();
         $municipios = [];
@@ -58,6 +59,18 @@ class GeneralesController extends Controller
                 'arraySedes' => $arraySedes,
                 'segmentos_clientes' => $segmentos_clientes,
                 'sede_deliveries' => $sede_deliveries,
+                'metodos_pagos' => $metodos_pagos->map(function ($metodo) {
+                    return [
+                        "id" => $metodo->id,
+                        "nombre" => $metodo->nombre,
+                        "bancos" => $metodo->metodo_pagos->map(function ($hijo) {
+                            return [
+                                "id" => $hijo->id,
+                                "nombre" => $hijo->nombre,
+                            ];
+                        }),
+                    ];
+                }),
             ], 200);
         } else {
             return response()->json([

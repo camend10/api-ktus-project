@@ -27,7 +27,11 @@ class FacturaDeliverie extends Model
         'estado',
         'fecha_envio',
         'departamento_id',
-        'municipio_id'
+        'municipio_id',
+        'agencia',
+        'encargado',
+        'documento',
+        'celular',
     ];
 
     public function setCreatedAtAttribute($value)

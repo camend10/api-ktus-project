@@ -144,6 +144,7 @@ Route::group([
     'middleware' => 'auth:api',
 ], function ($router) {
 
+    Route::post('/facturas/index', [FacturaController::class, 'index']);
     Route::patch('/facturas/{id}/cambiar-estado', [FacturaController::class, 'cambiarEstado']);
     Route::resource("facturas", FacturaController::class);
 

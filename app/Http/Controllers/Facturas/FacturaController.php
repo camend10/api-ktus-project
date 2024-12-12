@@ -9,6 +9,7 @@ use App\Http\Resources\Facturas\FacturaResource;
 use App\Models\Facturas\Factura;
 use App\Services\Facturas\FacturaService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class FacturaController extends Controller
 {
@@ -48,17 +49,34 @@ class FacturaController extends Controller
 
         $validated = $request->validated();
 
-        $factura = $this->facturaService->store($validated);
-
-        if (!$factura) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+        $imagenPath = null;
+        if ($request->hasFile('imagen')) {
+            $imagenPath = Storage::putFile('facturas', $request->file('imagen'));
+            $validated['imagen'] = $imagenPath;
+        } else {
+            $validated['imagen'] = null;
         }
 
-        return response()->json([
-            'message' => 200,
-            'message_text' => 'La factura se registró de manera exitosa',
-            'factura' => FacturaResource::make($factura)
-        ]);
+        try {
+            $factura = $this->facturaService->store($validated);
+
+            if (!$factura) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            return response()->json([
+                'message' => 200,
+                'message_text' => 'La factura se registró de manera exitosa',
+                'factura' => FacturaResource::make($factura)
+            ]);
+        } catch (\Exception $e) {
+            // Si hay un error, elimina la imagen subida
+            if ($imagenPath) {
+                Storage::delete($imagenPath);
+            }
+            // Lanza nuevamente la excepción para que se gestione adecuadamente
+            throw $e;
+        }
     }
 
     public function update(FacturaRequest $request, string $id)

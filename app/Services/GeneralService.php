@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Configuracion\Bodega;
 use App\Models\Configuracion\Categoria;
 use App\Models\Configuracion\Iva;
+use App\Models\Configuracion\MetodoPago;
 use App\Models\Configuracion\Proveedor;
 use App\Models\Configuracion\Sede;
 use App\Models\Configuracion\SedeDeliverie;
@@ -104,6 +105,14 @@ class GeneralService
     public function sedeDeliveries($empresa_id)
     {
         return SedeDeliverie::where('empresa_id', $empresa_id)
+            ->where('estado', 1)
+            ->get();
+    }
+
+    public function metodoPagos($empresa_id)
+    {
+        return MetodoPago::where('empresa_id', $empresa_id)
+            ->where('metodo_pago_id', null)
             ->where('estado', 1)
             ->get();
     }
