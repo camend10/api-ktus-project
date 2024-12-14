@@ -34,6 +34,16 @@ class FacturaDeliverie extends Model
         'celular',
     ];
 
+    protected $casts = [
+        'sede_deliverie_id' => 'integer',
+        'factura_id' => 'integer',
+        'departamento_id' => 'integer',
+        'municipio_id' => 'integer',
+        'empresa_id' => 'integer',
+        'sede_id' => 'integer',
+        'estado' => 'integer',
+    ];
+
     public function setCreatedAtAttribute($value)
     {
         date_default_timezone_set("America/Bogota");

@@ -55,6 +55,11 @@ class FacturaPago extends Model
         return $this->belongsTo(MetodoPago::class, 'metodo_pago_id')->withDefault();
     }
 
+    public function banco()
+    {
+        return $this->belongsTo(MetodoPago::class, 'banco_id')->withDefault();
+    }
+
     public function factura()
     {
         return $this->belongsTo(Factura::class, 'factura_id')->withDefault();

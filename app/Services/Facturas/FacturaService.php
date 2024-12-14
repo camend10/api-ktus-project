@@ -22,13 +22,37 @@ class FacturaService
         }
 
         if ($user && !in_array($user->role_id, [1, 2])) {
-            return Factura::FilterAdvance($data)
+            return Factura::with([
+                'empresa',
+                'sede',
+                'usuario',
+                'cliente',
+                'segmento',
+                'detalles_facturas.articulo',
+                'detalles_facturas.categoria',
+                'detalles_facturas.unidad',
+                'factura_deliverie.sede_deliverie',
+                'factura_pago.metodo_pago'
+            ])
+                ->FilterAdvance($data)
                 ->where("empresa_id", $user->empresa_id)
                 ->where("sede_id", $user->sede_id)
                 ->orderBy("id", "desc")
                 ->paginate(20);
         } else {
-            return Factura::FilterAdvance($data)
+            return Factura::with([
+                'empresa',
+                'sede',
+                'usuario',
+                'cliente',
+                'segmento',
+                'detalles_facturas.articulo',
+                'detalles_facturas.categoria',
+                'detalles_facturas.unidad',
+                'factura_deliverie.sede_deliverie',
+                'factura_pago.metodo_pago'
+            ])
+                ->FilterAdvance($data)
                 ->where("empresa_id", $user->empresa_id)
                 ->orderBy("id", "desc")
                 ->paginate(20);
@@ -38,11 +62,91 @@ class FacturaService
     public function getAllFacturas($data)
     {
 
-        return Factura::FilterAdvance($data)
-            ->where("estado", 1)
-            ->where("empresa_id", $data["empresa_id"])
-            ->orderBy("id", "desc")
-            ->get();
+        if ($data && !in_array($data["role_id"], [1, 2])) {
+            return Factura::with([
+                'empresa',
+                'sede',
+                'usuario',
+                'cliente',
+                'segmento',
+                'detalles_facturas',
+                'factura_deliverie.sede_deliverie',
+                'factura_pago.metodo_pago'
+            ])
+                ->FilterAdvance($data)
+                ->where("estado", 1)
+                ->where('empresa_id', $data["empresa_id"])
+                ->where('sede_id', $data["sede_id"])
+                ->orderBy("id", "desc")
+                ->get();
+        } else {
+            return Factura::with([
+                'empresa',
+                'sede',
+                'usuario',
+                'cliente',
+                'segmento',
+                'detalles_facturas',
+                'factura_deliverie.sede_deliverie',
+                'factura_pago.metodo_pago'
+            ])
+                ->FilterAdvance($data)
+                ->where("estado", 1)
+                ->where('empresa_id', $data["empresa_id"])
+                ->orderBy("id", "desc")
+                ->get();
+        }
+    }
+
+    public function getAllDetallesFacturas($data)
+    {
+
+        if ($data && !in_array($data["role_id"], [1, 2])) {
+            return DetalleFactura::whereHas('factura', function ($q) use ($data) {
+                $q->FilterAdvance($data); // Filtro avanzado aplicado a la factura
+            })
+                ->with([
+                    'factura' => function ($query) {
+                        $query->with([
+                            'empresa',
+                            'sede',
+                            'usuario',
+                            'cliente',
+                            'segmento',
+                            'detalles_facturas',
+                            'factura_deliverie.sede_deliverie',
+                            'factura_pago.metodo_pago'
+                        ]);
+                    }
+                ])
+                ->where('estado', 1)
+                ->where('empresa_id', $data["empresa_id"])
+                ->where('sede_id', $data["sede_id"])
+                ->orderBy('id', 'desc')
+                ->get();
+        } else {
+            return DetalleFactura::whereHas('factura', function ($q) use ($data) {
+                $q->FilterAdvance($data); // Filtro avanzado aplicado a la factura
+            })
+                ->with([
+                    'factura' => function ($query) {
+                        $query->with([
+                            'empresa',
+                            'sede',
+                            'usuario',
+                            'cliente',
+                            'segmento',
+                            'detalles_facturas',
+                            'factura_deliverie.sede_deliverie',
+                            'factura_pago.metodo_pago'
+                        ]);
+                    }
+                ])
+                ->where('estado', 1)
+                ->where('empresa_id', $data["empresa_id"])
+                ->orderBy('id', 'desc')
+                ->get();
+        }
     }
 
     public function store($request)
@@ -71,6 +175,7 @@ class FacturaService
                 "sub_total" => $request["sub_total"],
                 "deuda" => $request["deuda"],
                 "pago_out" => $request["pago_out"],
+                "estado_pago" => 3,
             ]);
 
 
@@ -166,9 +271,21 @@ class FacturaService
         return $resp;
     }
 
-
     public function getById($id)
     {
-        return Factura::findOrFail($id);
+        return Factura::with([
+            'empresa',
+            'sede',
+            'usuario',
+            'cliente',
+            'segmento',
+            'detalles_facturas.articulo',
+            'detalles_facturas.iva',
+            'detalles_facturas.unidad',
+            'detalles_facturas.categoria',
+            'factura_deliverie.sede_deliverie',
+            'factura_pago.metodo_pago',
+            'factura_pago.banco'
+        ])->findOrFail($id);
     }
 }

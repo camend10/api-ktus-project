@@ -121,7 +121,6 @@ Route::group([
     Route::resource("articulos", ArticuloController::class);
     Route::resource("articulos-wallets", ArticuloWalletController::class);
     Route::resource("bodegas-articulos", BodegaArticuloController::class);
-
 });
 
 Route::get('/excel/export-articulo', [ArticuloController::class, 'export_articulo']);
@@ -138,14 +137,21 @@ Route::group([
 
     Route::get('/clientes/buscar-clientes', [ClienteController::class, 'buscarClientes']);
 });
+
 Route::get('/excel/export-clientes', [ClienteController::class, 'export_clientes']);
+
+Route::get('/facturas/imprimir-factura', [FacturaController::class, 'imprimir']);
+Route::get('/excel/export-factura', [FacturaController::class, 'export_factura']);
+Route::get('/excel/export-detalle-factura', [FacturaController::class, 'export_detalle_factura']);
 
 Route::group([
     'middleware' => 'auth:api',
 ], function ($router) {
-
     Route::post('/facturas/index', [FacturaController::class, 'index']);
     Route::patch('/facturas/{id}/cambiar-estado', [FacturaController::class, 'cambiarEstado']);
     Route::resource("facturas", FacturaController::class);
-
 });
+
+
+
+

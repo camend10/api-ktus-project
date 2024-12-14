@@ -16,6 +16,7 @@ use App\Models\Empresa;
 use App\Models\Genero;
 use App\Models\Municipio;
 use App\Models\TipoDocumento;
+use App\Models\User;
 use Spatie\Permission\Models\Role;
 
 class GeneralService
@@ -115,5 +116,33 @@ class GeneralService
             ->where('metodo_pago_id', null)
             ->where('estado', 1)
             ->get();
+    }
+
+    public function vendedores($empresa_id)
+    {
+        $user = auth('api')->user();
+        if (!$user) {
+            return false;
+        }
+        if ($user && !in_array($user->role_id, [1, 2])) {
+
+            return User::where('empresa_id', $empresa_id)
+                ->where('sede_id', $user->sede_id)
+                ->where('role_id', '!=', 1)
+                ->where('estado', 1)
+                ->get();
+        } else {
+
+            return User::where('empresa_id', $empresa_id)
+                ->where('role_id', '!=', 1)
+                ->where('estado', 1)
+                ->get();
+        }
+    }
+
+    public function getEmpresa($empresa_id)
+    {
+        return Empresa::where('id', $empresa_id)
+            ->first();
     }
 }

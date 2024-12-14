@@ -15,7 +15,17 @@ class ClienteService
             return false;
         }
 
-        return Cliente::FilterAdvance($data)
+        return Cliente::with([
+            'tipodocumento',
+            'segmento',
+            'departamento',
+            'municipio',
+            'empresa',
+            'sede',
+            'usuario',
+            'genero'
+        ])
+            ->FilterAdvance($data)
             ->where('empresa_id', $user->empresa_id)
             ->orderBy('id', 'desc')
             ->paginate(20);
@@ -24,7 +34,17 @@ class ClienteService
     public function getAllClientes($data)
     {
 
-        return Cliente::FilterAdvance($data)
+        return Cliente::with([
+            'tipodocumento',
+            'segmento',
+            'departamento',
+            'municipio',
+            'empresa',
+            'sede',
+            'usuario',
+            'genero'
+        ])
+            ->FilterAdvance($data)
             ->where('estado', 1)
             ->where('empresa_id', $data["empresa_id"])
             ->orderBy('id', 'desc')
@@ -39,7 +59,7 @@ class ClienteService
             return false;
         }
         $request["user_id"] = $user->id;
-        
+
         $resp = Cliente::create($request);
         return $resp;
     }
@@ -73,5 +93,4 @@ class ClienteService
     {
         return Cliente::findOrFail($id);
     }
-
 }

@@ -36,6 +36,24 @@ class DetalleFactura extends Model
         'total_descuento'
     ];
 
+    protected $casts = [
+        'precio_item' => 'float',
+        'total_precio' => 'float',
+        'total_iva' => 'float',
+        'cantidad_item' => 'integer',
+        'factura_id' => 'integer',
+        'articulo_id' => 'integer',
+        'iva_id' => 'integer',
+        'empresa_id' => 'integer',
+        'sede_id' => 'integer',
+        'estado' => 'integer',
+        'categoria_id' => 'integer',
+        'unidad_id' => 'integer',
+        'descuento' => 'float',
+        'sub_total' => 'float',
+        'total_descuento' => 'float',
+    ];
+
     public function setCreatedAtAttribute($value)
     {
         date_default_timezone_set("America/Bogota");
@@ -82,5 +100,4 @@ class DetalleFactura extends Model
     {
         return $this->belongsTo(Unidad::class, 'unidad_id')->withDefault();
     }
-
 }

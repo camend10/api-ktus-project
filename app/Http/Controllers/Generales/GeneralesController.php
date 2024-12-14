@@ -29,6 +29,8 @@ class GeneralesController extends Controller
         $segmentos_clientes = $this->generalService->segmentos_clientes($request->empresa_id);
         $sede_deliveries = $this->generalService->sedeDeliveries($request->empresa_id);
         $metodos_pagos = $this->generalService->metodoPagos($request->empresa_id);
+        $categorias = $this->generalService->categorias($request->empresa_id);
+        $vendedores = $this->generalService->vendedores($request->empresa_id);
 
         $muni = $this->generalService->getMunicipios();
         $municipios = [];
@@ -59,6 +61,8 @@ class GeneralesController extends Controller
                 'arraySedes' => $arraySedes,
                 'segmentos_clientes' => $segmentos_clientes,
                 'sede_deliveries' => $sede_deliveries,
+                'categorias' => $categorias,
+                'vendedores' => $vendedores,
                 'metodos_pagos' => $metodos_pagos->map(function ($metodo) {
                     return [
                         "id" => $metodo->id,

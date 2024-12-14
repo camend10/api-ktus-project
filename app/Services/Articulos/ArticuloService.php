@@ -17,7 +17,17 @@ class ArticuloService
             return false;
         }
 
-        return Articulo::FilterAdvance($data)
+        return Articulo::with([
+            'iva',
+            'empresa',
+            'categoria',
+            'unidad_punto_pedido',
+            'usuario',
+            'proveedor',
+            'bodegas_articulos',
+            'articulos_wallets'
+        ])
+            ->FilterAdvance($data)
             ->where('empresa_id', $user->empresa_id)
             ->orderBy('id', 'desc')
             ->paginate(20);
@@ -222,7 +232,17 @@ class ArticuloService
     public function getAllArticulos($data)
     {
 
-        return Articulo::FilterAdvance($data)
+        return Articulo::with([
+            'iva',
+            'empresa',
+            'categoria',
+            'unidad_punto_pedido',
+            'usuario',
+            'proveedor',
+            'bodegas_articulos',
+            'articulos_wallets'
+        ])
+            ->FilterAdvance($data)
             ->where('estado', 1)
             ->where('empresa_id', $data["empresa_id"])
             ->orderBy('id', 'desc')
