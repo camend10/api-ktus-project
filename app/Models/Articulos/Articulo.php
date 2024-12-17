@@ -61,23 +61,8 @@ class Articulo extends Model
         'proveedor_id' => 'integer',
         'impuesto' => 'integer',
         'disponibilidad' => 'integer',
+        'is_gift' => 'integer',
     ];
-
-    // protected $casts = [
-    //     'precio_general' => 'numeric',
-    //     'existencia' => 'integer',
-    //     'punto_pedido' => 'integer',
-    //     'iva_id' => 'integer',
-    //     'empresa_id' => 'integer',
-    //     'estado' => 'integer',
-    //     'categoria_id' => 'integer',
-    //     'is_gift' => 'integer',
-    //     'descuento_maximo' => 'numeric',
-    //     'fecha_vencimiento' => 'numeric',
-    //     'disponibilidad' => 'integer',
-    //     'user_id' => 'integer',
-    // ];
-
 
     public function setCreatedAtAttribute($value)
     {

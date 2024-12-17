@@ -16,6 +16,8 @@ use App\Models\Configuracion\SedeDeliverie;
 use App\Models\Configuracion\SegmentoCliente;
 use App\Models\Configuracion\Unidad;
 use App\Models\Facturas\Factura;
+use App\Models\Movimientos\Movimiento;
+use App\Models\Movimientos\Solicitud;
 use App\Models\User;
 use App\Policies\ArticuloPolicy;
 use App\Policies\BodegaPolicy;
@@ -29,6 +31,7 @@ use App\Policies\RolePolicy;
 use App\Policies\SedeDeliveriePolicy;
 use App\Policies\SedePolicy;
 use App\Policies\SegmentoClientePolicy;
+use App\Policies\SolicitudPolicy;
 use App\Policies\UnidadPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -57,6 +60,7 @@ class AuthServiceProvider extends ServiceProvider
         Articulo::class => ArticuloPolicy::class,
         Cliente::class => ClientePolicy::class,
         Factura::class => FacturaPolicy::class,
+        Solicitud::class => SolicitudPolicy::class,
     ];
 
     /**

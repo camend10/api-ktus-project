@@ -192,6 +192,7 @@ class GeneralesController extends Controller
         $segmentos_clientes = $this->generalService->segmentos_clientes($request->empresa_id);
         $categorias = $this->generalService->categorias($request->empresa_id);
         $proveedores = $this->generalService->proveedores($request->empresa_id);
+        $vendedores = $this->generalService->vendedores($request->empresa_id);
 
         if ($empresas) {
             return response()->json([
@@ -203,6 +204,7 @@ class GeneralesController extends Controller
                 'ivas' => $ivas,
                 'categorias' => $categorias,
                 'proveedores' => $proveedores,
+                'vendedores' => $vendedores,
             ], 200);
         } else {
             return response()->json([

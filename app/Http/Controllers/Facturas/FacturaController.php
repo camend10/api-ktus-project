@@ -93,17 +93,34 @@ class FacturaController extends Controller
 
         $validated = $request->validated();
 
-        $factura = $this->facturaService->update($validated, $id);
-
-        if (!$factura) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+        $imagenPath = null;
+        if ($request->hasFile('imagen')) {
+            $imagenPath = Storage::putFile('facturas', $request->file('imagen'));
+            $validated['imagen'] = $imagenPath;
+        } else {
+            $validated['imagen'] = null;
         }
 
-        return response()->json([
-            'message' => 200,
-            'message_text' => 'La factura se editó de manera exitosa',
-            'factura' => FacturaResource::make($factura)
-        ]);
+        try {
+            $factura = $this->facturaService->update($validated, $id);
+
+            if (!$factura) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            return response()->json([
+                'message' => 200,
+                'message_text' => 'La factura se editó de manera exitosa',
+                'factura' => FacturaResource::make($factura)
+            ]);
+        } catch (\Exception $e) {
+            // Si hay un error, elimina la imagen subida
+            if ($imagenPath) {
+                Storage::delete($imagenPath);
+            }
+            // Lanza nuevamente la excepción para que se gestione adecuadamente
+            throw $e;
+        }
     }
 
     public function cambiarEstado(Request $request, $id)
@@ -122,10 +139,11 @@ class FacturaController extends Controller
             return response()->json([
                 'message' => 403,
                 'message_text' => 'Factura no encontrada',
-                'proveedor' => []
+                'factura' => []
             ], 403);
         }
 
+        $factura = $this->facturaService->getById($id);
         return response()->json([
             'message' => 200,
             'message_text' => $texto,
@@ -228,6 +246,20 @@ class FacturaController extends Controller
             'message' => 200,
             'message_text' => '',
             'factura' => FacturaResource::make($factura)
+        ]);
+    }
+
+    public function eliminarDetalle(Request $request)
+    {
+        $factura = $this->facturaService->deleteDetalle($request->id);
+
+        if (!$factura) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => ''
         ]);
     }
 }

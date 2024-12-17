@@ -100,7 +100,7 @@ class ClienteController extends Controller
             return response()->json([
                 'message' => 403,
                 'message_text' => 'Cliente no encontrado',
-                'proveedor' => []
+                'cliente' => []
             ], 403);
         }
 

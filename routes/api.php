@@ -18,6 +18,7 @@ use App\Http\Controllers\Configuracion\UnidadController;
 use App\Http\Controllers\Facturas\FacturaController;
 use App\Http\Controllers\Generales\GeneralesController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\Solicitudes\SolicitudController;
 use App\Http\Controllers\Usuarios\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -147,11 +148,19 @@ Route::get('/excel/export-detalle-factura', [FacturaController::class, 'export_d
 Route::group([
     'middleware' => 'auth:api',
 ], function ($router) {
+    Route::post('/facturas/editar/{id}', [FacturaController::class, 'update']);
+    Route::post('/facturas/eliminar-detalle', [FacturaController::class, 'eliminarDetalle']);
     Route::post('/facturas/index', [FacturaController::class, 'index']);
     Route::patch('/facturas/{id}/cambiar-estado', [FacturaController::class, 'cambiarEstado']);
     Route::resource("facturas", FacturaController::class);
 });
 
-
-
-
+Route::group([
+    'middleware' => 'auth:api',
+], function ($router) {
+    
+    Route::post('/solicitudes/entrega', [SolicitudController::class, 'entrega']);
+    Route::post('/solicitudes/index', [SolicitudController::class, 'index']);
+    Route::patch('/solicitudes/{id}/cambiar-estado', [SolicitudController::class, 'cambiarEstado']);
+    Route::resource("solicitudes", SolicitudController::class);
+});

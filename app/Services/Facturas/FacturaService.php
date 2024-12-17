@@ -37,6 +37,7 @@ class FacturaService
                 ->FilterAdvance($data)
                 ->where("empresa_id", $user->empresa_id)
                 ->where("sede_id", $user->sede_id)
+                ->where("estado", 1)
                 ->orderBy("id", "desc")
                 ->paginate(20);
         } else {
@@ -249,12 +250,123 @@ class FacturaService
 
     public function update($request, $id)
     {
+        $user = auth("api")->user();
 
-        $resp = Factura::findOrFail($id);
+        if (!$user) {
+            return false;
+        }
 
-        $resp->update($request);
+        try {
+            // Inicia la transacción
+            DB::beginTransaction();
 
-        return $resp;
+            // Determina si es una actualización o creación
+            $factura = $id ? Factura::findOrFail($id) : new Factura();
+
+            // Asignar datos comunes a la factura
+            $factura->fill([
+                "total_venta" => $request["total_venta"],
+                "total_descuento" => $request["total_descuento"],
+                "total_iva" => $request["total_iva"],
+                "descripcion" => $request["descripcion"],
+                "user_id" => $user->id,
+                "cliente_id" => $request["cliente_id"],
+                "empresa_id" => $user->empresa_id,
+                "sede_id" => $user->sede_id,
+                "estado" => 1,
+                "segmento_cliente_id" => $request["segmento_cliente_id"],
+                "sub_total" => $request["sub_total"],
+                "deuda" => $request["deuda"],
+                "pago_out" => $request["pago_out"],
+                "estado_pago" => 3,
+            ]);
+
+            $factura->save();
+
+            // Sincronizar detalles de factura
+            $detalle_factura = $request["detalle_factura"] ?? [];
+            // Log::error('Error al crear la factura: ' . json_encode($detalle_factura));
+
+            $detalle_ids = [];
+
+            foreach ($detalle_factura as $detalle) {
+                $detalle_model = DetalleFactura::updateOrCreate(
+                    [
+                        "factura_id" => $factura->id,
+                        "articulo_id" => $detalle["articulo"]["id"],
+                    ],
+                    [
+                        "precio_item" => $detalle["precio_item"],
+                        "total_precio" => $detalle["total_precio"],
+                        "total_iva" => $detalle["total_iva"],
+                        "cantidad_item" => $detalle["cantidad_item"],
+                        "iva_id" => $detalle["iva_id"],
+                        "empresa_id" => $user->empresa_id,
+                        "sede_id" => $user->sede_id,
+                        "estado" => 1,
+                        "categoria_id" => $detalle["articulo"]["categoria_id"],
+                        "descuento" => $detalle["descuento"],
+                        "sub_total" => $detalle["sub_total"],
+                        "unidad_id" => $detalle["unidad_id"],
+                        "total_descuento" => $detalle["total_descuento"],
+                    ]
+                );
+                $detalle_ids[] = $detalle_model->id;
+            }
+
+            // Eliminar registros que no estén en los nuevos detalles
+            DetalleFactura::where("factura_id", $factura->id)
+                ->whereNotIn("id", $detalle_ids)
+                ->delete();
+
+            // Manejar FacturaDeliverie
+            if (isset($request["sede_deliverie_id"])) {
+                if ($request['sede_deliverie_id'] != 9999999) {
+                    FacturaDeliverie::updateOrCreate(
+                        ["factura_id" => $factura->id],
+                        [
+                            "sede_deliverie_id" => $request['sede_deliverie_id'],
+                            "fecha_entrega" => $request["fecha_entrega"],
+                            "direccion" => $request["direccion_deliverie"],
+                            "empresa_id" => $user->empresa_id,
+                            "sede_id" => $user->sede_id,
+                            "estado" => 1,
+                            "fecha_envio" => Carbon::parse($request["fecha_entrega"])->subDay(2),
+                            "departamento_id" => $request["departamento_id"],
+                            "municipio_id" => $request["municipio_id"],
+                            "agencia" => $request["agencia_deliverie"],
+                            "encargado" => $request["encargado_deliverie"],
+                            "documento" => $request["documento_deliverie"],
+                            "celular" => $request["celular_deliverie"],
+                        ]
+                    );
+                }
+            }
+
+            // Manejar FacturaPago
+            FacturaPago::updateOrCreate(
+                ["factura_id" => $factura->id],
+                [
+                    "monto" => $request["monto_pago"],
+                    "metodo_pago_id" => $request["metodo_pago_id"],
+                    "banco_id" => $request["banco_id"],
+                    "imagen" => $request["imagen"],
+                    "empresa_id" => $user->empresa_id,
+                    "sede_id" => $user->sede_id,
+                    "estado" => 1,
+                ]
+            );
+
+            // Confirmar transacción
+            DB::commit();
+
+            return $factura;
+        } catch (\Throwable $e) {
+            // Revierte la transacción en caso de error
+            DB::rollBack();
+            Log::error('Error al crear o actualizar la factura: ' . $e->getMessage());
+            throw new HttpException(500, $e->getMessage());
+        }
     }
 
     public function cambiarEstado($request, $id)
@@ -287,5 +399,12 @@ class FacturaService
             'factura_pago.metodo_pago',
             'factura_pago.banco'
         ])->findOrFail($id);
+    }
+
+    public function deleteDetalle($id)
+    {
+        $detalle = DetalleFactura::findOrFail($id);
+
+        $detalle->delete();
     }
 }
