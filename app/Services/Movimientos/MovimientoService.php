@@ -12,7 +12,6 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class MovimientoService
 {
-
     public function getByFilter($data)
     {
         $user = auth("api")->user();
@@ -185,6 +184,106 @@ class MovimientoService
                 ->whereNotIn("id", $detalle_ids)
                 ->delete();
 
+
+            if ($request["estado"] == 4) {
+                // ENTRADAS Y SALIDAS DE ARTICULOS
+                $movimiento = Movimiento::findOrFail($id);
+
+                //SALIDA
+                if ($request["tipo_movimiento"] == 2) {
+
+                    // Validacion
+                    foreach ($movimiento->detalles_movimientos as $detalle) {
+
+                        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
+                            ->where('unidad_id', $detalle->unidad_id)
+                            ->where('bodega_id', $movimiento->bodega_id)
+                            ->where('empresa_id', $movimiento->empresa_id)
+                            ->first();
+
+                        if (!$bodega_articulo) {
+
+                            return [
+                                'error' => true,
+                                'code' => 403,
+                                'message' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad'
+                            ];
+                        }
+
+                        if ($bodega_articulo->cantidad < $detalle->cantidad) {
+                            // Log::info('movimiento:', ['movimiento' => $movimiento]);
+                            // Log::info('detalle movimiento:', ['detalle' => $detalle]);
+                            // dd($bodega_articulo);
+                            return [
+                                'error' => true,
+                                'code' => 403,
+                                'message' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad para realizar esta salida'
+                            ];
+                        }
+                    }
+                    // Validacion
+
+
+                    foreach ($movimiento->detalles_movimientos as $key => $detalle) {
+                        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
+                            ->where('unidad_id', $detalle->unidad_id)
+                            ->where('bodega_id', $movimiento->bodega_id)
+                            ->where('empresa_id', $movimiento->empresa_id)
+                            ->first();
+
+                        $bodega_articulo->update([
+                            "cantidad" => $bodega_articulo->cantidad - $detalle->cantidad
+                        ]);
+
+                        $detalle->update([
+                            "estado" => 2,
+                            "user_id" => $user->id,
+                            "fecha_entrega" => Carbon::now(),
+                        ]);
+                    }
+                }
+                //SALIDA
+
+                //ENTRADA
+                if ($request["tipo_movimiento"] == 1) {
+                    foreach ($movimiento->detalles_movimientos as $detalle) {
+                        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
+                            ->where('unidad_id', $detalle->unidad_id)
+                            ->where('bodega_id', $movimiento->bodega_id)
+                            ->where('empresa_id', $movimiento->empresa_id)
+                            ->first();
+                        // Log::info('movimiento:', ['movimiento' => $movimiento]);
+                        // Log::info('detalle movimiento:', ['detalle' => $detalle]);
+                        // dd($bodega_articulo);
+
+                        if (!$bodega_articulo) {
+                            // Crear un nuevo registro si no existe
+                            BodegaArticulo::create([
+                                'articulo_id' => $detalle->articulo_id,
+                                'bodega_id' => $movimiento->bodega_id,
+                                'empresa_id' => $detalle->empresa_id,
+                                'unidad_id' => $detalle->unidad_id,
+                                'cantidad' => $detalle->cantidad,
+                                'estado' => 1, // Estado activo
+                            ]);
+                        } else {
+                            $bodega_articulo->update([
+                                "cantidad" => $bodega_articulo->cantidad + $detalle->cantidad
+                            ]);
+                        }
+
+                        $detalle->update([
+                            "estado" => 2,
+                            "user_id" => $user->id,
+                            "fecha_entrega" => Carbon::now(),
+                        ]);
+                    }
+                }
+                //ENTRADA
+
+                // ENTRADAS Y SALIDAS DE ARTICULOS
+            }
+
             // Confirmar transacción
             DB::commit();
 
@@ -192,8 +291,33 @@ class MovimientoService
         } catch (\Throwable $e) {
             // Revierte la transacción en caso de error
             DB::rollBack();
-            Log::error('Error al crear o actualizar la factura: ' . $e->getMessage());
+            Log::error('Error al crear o actualizar el movimiento: ' . $e->getMessage());
             throw new HttpException(500, $e->getMessage());
+        }
+    }
+
+    public function validacion($detalle, $bodega_id)
+    {
+        // Lógica para manejar cada $detalle_model
+        Log::info('Llamando a movimiento con:', ['detalle' => $detalle]);
+
+        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
+            ->where('unidad_id', $detalle->articulo_id)
+            ->where('bodega_id', $bodega_id)
+            ->first();
+
+        if (!$bodega_articulo) {
+            return response()->json([
+                'message' => 403,
+                'message_text' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad',
+            ]);
+        }
+
+        if ($bodega_articulo->cantidad < $detalle->cantidad) {
+            return response()->json([
+                'message' => 403,
+                'message_text' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad',
+            ]);
         }
     }
 
@@ -219,7 +343,9 @@ class MovimientoService
             'usuario',
             'proveedor',
             'bodega',
-            'detalles_movimientos.articulo',
+            'detalles_movimientos.articulo.bodegas_articulos.bodega',
+            'detalles_movimientos.articulo.bodegas_articulos.unidad',
+            'detalles_movimientos.articulo.articulos_wallets.unidad',
             'detalles_movimientos.unidad',
         ])->findOrFail($id);
     }

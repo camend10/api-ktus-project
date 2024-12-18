@@ -66,16 +66,23 @@ class MovimientoController extends Controller
         $validated = $request->validated();
 
         try {
-            $movimiento = $this->movimientoService->update($validated, $id);
-
-            if (!$movimiento) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+            $result = $this->movimientoService->update($validated, $id);
+            
+            if (isset($result['error'])) {                
+                return response()->json([
+                    'message' => 403,
+                    'message_text' => $result['message']
+                ]);
             }
+
+            $message_text = ($request->estado == 4)
+                ? 'El movimiento se aprobó de manera exitosa'
+                : 'El movimiento se editó de manera exitosa';
 
             return response()->json([
                 'message' => 200,
-                'message_text' => 'El movimiento se editó de manera exitosa',
-                'movimiento' => MovimientoResource::make($movimiento)
+                'message_text' => $message_text,
+                'movimiento' => MovimientoResource::make($result),
             ]);
         } catch (\Exception $e) {
             // Lanza nuevamente la excepción para que se gestione adecuadamente
@@ -137,29 +144,6 @@ class MovimientoController extends Controller
     public function entrada(Request $request)
     {
         $this->authorize('entrada', Movimiento::class);
-
-        try {
-
-            $movimiento = $this->movimientoService->entrada($request);
-
-            if (!$movimiento) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
-            }
-
-            return response()->json([
-                'message' => 200,
-                'message_text' => 'La entrega se realizó de manera exitosa',
-                'movimiento' => $movimiento
-            ]);
-        } catch (\Exception $e) {
-
-            throw $e;
-        }
-    }
-
-    public function salida(Request $request)
-    {
-        $this->authorize('salida', Movimiento::class);
 
         try {
 

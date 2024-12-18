@@ -12,7 +12,6 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SolicitudService
 {
-
     public function getByFilter($data)
     {
         $user = auth("api")->user();

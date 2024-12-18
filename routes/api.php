@@ -159,14 +159,13 @@ Route::group([
 Route::group([
     'middleware' => 'auth:api',
 ], function ($router) {
-    
+
     Route::post('/solicitudes/entrega', [SolicitudController::class, 'entrega']);
     Route::post('/solicitudes/index', [SolicitudController::class, 'index']);
     Route::patch('/solicitudes/{id}/cambiar-estado', [SolicitudController::class, 'cambiarEstado']);
     Route::resource("solicitudes", SolicitudController::class);
 
     Route::post('/movimientos/entrada', [MovimientoController::class, 'entrada']);
-    Route::post('/movimientos/salida', [MovimientoController::class, 'salida']);
     Route::post('/movimientos/index', [MovimientoController::class, 'index']);
     Route::patch('/movimientos/{id}/cambiar-estado', [MovimientoController::class, 'cambiarEstado']);
     Route::resource("movimientos", MovimientoController::class);
