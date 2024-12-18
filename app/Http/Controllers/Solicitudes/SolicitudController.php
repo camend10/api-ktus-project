@@ -31,7 +31,6 @@ class SolicitudController extends Controller
 
         return response()->json([
             'total' => $solicitudes->total(),
-            'solicitudes' => $solicitudes,
             'solicitudes' => SolicitudCollection::make($solicitudes),
         ]);
     }

@@ -88,7 +88,13 @@ class Movimiento extends Model
         return $this->hasMany(DetalleMovimiento::class, 'movimiento_id');
     }
 
-    
+    public function detalle_entregados()
+    {
+        return $this->hasMany(DetalleMovimiento::class, 'movimiento_id')
+            ->where('estado', 2);
+    }
+
+
     public function scopeFilterAdvance($query, $data)
     {
         // Log::error('Error al crear la factura: ' . json_encode($data));

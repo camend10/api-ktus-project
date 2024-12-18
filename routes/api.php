@@ -17,6 +17,7 @@ use App\Http\Controllers\Configuracion\SegmentoClienteController;
 use App\Http\Controllers\Configuracion\UnidadController;
 use App\Http\Controllers\Facturas\FacturaController;
 use App\Http\Controllers\Generales\GeneralesController;
+use App\Http\Controllers\Movimientos\MovimientoController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Solicitudes\SolicitudController;
 use App\Http\Controllers\Usuarios\UsuarioController;
@@ -163,4 +164,10 @@ Route::group([
     Route::post('/solicitudes/index', [SolicitudController::class, 'index']);
     Route::patch('/solicitudes/{id}/cambiar-estado', [SolicitudController::class, 'cambiarEstado']);
     Route::resource("solicitudes", SolicitudController::class);
+
+    Route::post('/movimientos/entrada', [MovimientoController::class, 'entrada']);
+    Route::post('/movimientos/salida', [MovimientoController::class, 'salida']);
+    Route::post('/movimientos/index', [MovimientoController::class, 'index']);
+    Route::patch('/movimientos/{id}/cambiar-estado', [MovimientoController::class, 'cambiarEstado']);
+    Route::resource("movimientos", MovimientoController::class);
 });

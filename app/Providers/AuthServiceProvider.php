@@ -26,6 +26,7 @@ use App\Policies\ClientePolicy;
 use App\Policies\FacturaPolicy;
 use App\Policies\IvaPolicy;
 use App\Policies\MetodoPagoPolicy;
+use App\Policies\MovimientoPolicy;
 use App\Policies\ProveedorPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\SedeDeliveriePolicy;
@@ -61,6 +62,7 @@ class AuthServiceProvider extends ServiceProvider
         Cliente::class => ClientePolicy::class,
         Factura::class => FacturaPolicy::class,
         Solicitud::class => SolicitudPolicy::class,
+        Movimiento::class => MovimientoPolicy::class,
     ];
 
     /**

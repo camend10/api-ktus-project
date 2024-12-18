@@ -3,14 +3,14 @@
 namespace App\Services\Movimientos;
 
 use App\Models\Articulos\BodegaArticulo;
-use App\Models\Movimientos\DetalleSolicitud;
-use App\Models\Movimientos\Solicitud;
+use App\Models\Movimientos\DetalleMovimiento;
+use App\Models\Movimientos\Movimiento;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class SolicitudService
+class MovimientoService
 {
 
     public function getByFilter($data)
@@ -22,7 +22,7 @@ class SolicitudService
         }
 
         if ($user && !in_array($user->role_id, [1, 2])) {
-            return Solicitud::with([
+            return Movimiento::with([
                 'empresa',
                 'sede',
                 'usuario',
@@ -34,11 +34,11 @@ class SolicitudService
                 ->FilterAdvance($data)
                 ->where("empresa_id", $user->empresa_id)
                 ->where("sede_id", $user->sede_id)
-                ->where("destino", 'Solicitud')
+                ->where("destino", 'Movimiento')
                 ->orderBy("id", "desc")
                 ->paginate(20);
         } else {
-            return Solicitud::with([
+            return Movimiento::with([
                 'empresa',
                 'sede',
                 'usuario',
@@ -49,7 +49,7 @@ class SolicitudService
             ])
                 ->FilterAdvance($data)
                 ->where("empresa_id", $user->empresa_id)
-                ->where("destino", 'Solicitud')
+                ->where("destino", 'Movimiento')
                 ->orderBy("id", "desc")
                 ->paginate(20);
         }
@@ -67,7 +67,7 @@ class SolicitudService
             // Inicia la transacción
             DB::beginTransaction();
 
-            $respuesta = Solicitud::create([
+            $respuesta = Movimiento::create([
                 'fecha_emision' => $request["fecha_emision"],
                 'tipo_movimiento' => $request["tipo_movimiento"],
                 'observacion' => $request["observacion"],
@@ -88,7 +88,7 @@ class SolicitudService
             $detalles = $request["detalles_movimientos"] ?? [];
 
             foreach ($detalles as $detalle) {
-                DetalleSolicitud::create([
+                DetalleMovimiento::create([
                     'cantidad' => $detalle["cantidad"],
                     'cantidad_recibida' => $detalle["cantidad_recibida"],
                     'total' => $detalle["total"],
@@ -130,10 +130,10 @@ class SolicitudService
             DB::beginTransaction();
 
             // Determina si es una actualización o creación
-            $solicitud = $id ? Solicitud::findOrFail($id) : new Solicitud();
+            $movimiento = $id ? Movimiento::findOrFail($id) : new Movimiento();
 
             // Asignar datos comunes a la factura
-            $solicitud->fill([
+            $movimiento->fill([
                 'fecha_emision' => $request["fecha_emision"],
                 'tipo_movimiento' => $request["tipo_movimiento"],
                 'observacion' => $request["observacion"],
@@ -150,7 +150,7 @@ class SolicitudService
                 'fecha_entrega' => $request["fecha_entrega"],
             ]);
 
-            $solicitud->save();
+            $movimiento->save();
 
             // Sincronizar detalles de factura
             $detalles = $request["detalles_movimientos"] ?? [];
@@ -159,9 +159,9 @@ class SolicitudService
             $detalle_ids = [];
 
             foreach ($detalles as $detalle) {
-                $detalle_model = DetalleSolicitud::updateOrCreate(
+                $detalle_model = DetalleMovimiento::updateOrCreate(
                     [
-                        "movimiento_id" => $solicitud->id,
+                        "movimiento_id" => $movimiento->id,
                         "articulo_id" => $detalle["articulo"]["id"],
                     ],
                     [
@@ -181,14 +181,14 @@ class SolicitudService
             }
 
             // Eliminar registros que no estén en los nuevos detalles
-            DetalleSolicitud::where("movimiento_id", $solicitud->id)
+            DetalleMovimiento::where("movimiento_id", $movimiento->id)
                 ->whereNotIn("id", $detalle_ids)
                 ->delete();
 
             // Confirmar transacción
             DB::commit();
 
-            return $solicitud;
+            return $movimiento;
         } catch (\Throwable $e) {
             // Revierte la transacción en caso de error
             DB::rollBack();
@@ -213,7 +213,7 @@ class SolicitudService
 
     public function getById($id)
     {
-        return Solicitud::with([
+        return Movimiento::with([
             'empresa',
             'sede',
             'usuario',
@@ -224,7 +224,7 @@ class SolicitudService
         ])->findOrFail($id);
     }
 
-    public function entrega($request)
+    public function entrada($request)
     {
         $user = auth("api")->user();
 
@@ -232,70 +232,60 @@ class SolicitudService
             return false;
         }
 
-        try {
-            // Inicia la transacción
-            DB::beginTransaction();
-            $detalles_movimientos = $request["deta_movi_ids"] ?? [];
-            $solicitud = $this->getById($request["movimiento_id"]);
+        return DB::transaction(function () use ($request, $user) {
+            // Obtener el movimiento
+            $movimiento = $this->getById($request['movimiento_id']);
 
-            $num_max_detalle = $solicitud->detalles_movimientos->count();
-            $num_detalle_entregados = $solicitud->detalle_entregados->count();
-            date_default_timezone_set("America/Bogota");
+            // Obtener los IDs de los detalles seleccionados
+            $detalles_movimientos_ids = $request['deta_movi_ids'] ?? [];
+
+            // Filtrar los detalles que no han sido entregados y coinciden con los IDs
+            $detalles_a_entregar = $movimiento->detalles_movimientos
+                ->whereIn('id', $detalles_movimientos_ids)
+                ->filter(fn($detalle) => !$detalle->fecha_entrega);
+
+            // Contador para los detalles entregados
             $num_entregados_ahora = 0;
-            foreach ($solicitud->detalles_movimientos as $key => $detalle) {
-                if (in_array($detalle->id, $detalles_movimientos) && !$detalle->fecha_entrega) {
-                    $detalle->update([
-                        "estado" => 2,
-                        "user_id" => $user->id,
-                        "fecha_entrega" => Carbon::now(),
-                    ]);
-                    $num_entregados_ahora++;
 
-                    $is_existe_bodega = BodegaArticulo::where("articulo_id", $detalle->articulo_id)
-                        ->where("unidad_id", $detalle->unidad_id)
-                        ->where("bodega_id", $solicitud->bodega_id)
-                        ->where("empresa_id", $detalle->empresa_id)
-                        ->first();
+            foreach ($detalles_a_entregar as $detalle) {
+                // Actualizar el detalle como entregado
+                $detalle->update([
+                    "estado" => 2, // Estado entregado
+                    "user_id" => $user->id,
+                    "fecha_entrega" => Carbon::now(),
+                ]);
 
-                    if ($is_existe_bodega) {
-                        $is_existe_bodega->update([
-                            "cantidad" => $detalle->cantidad + $is_existe_bodega->cantidad
-                        ]);
-                    } else {
-                        BodegaArticulo::create([
-                            'articulo_id' => $detalle->articulo_id,
-                            'bodega_id' => $solicitud->bodega_id,
-                            'cantidad' => $detalle->cantidad,
-                            'empresa_id' => $detalle->empresa_id,
-                            'estado' => 1,
-                            'unidad_id' =>  $detalle->unidad_id,
-                        ]);
-                    }
-                }
+                // Actualizar o crear el artículo en la bodega
+                BodegaArticulo::updateOrCreate(
+                    [
+                        'articulo_id' => $detalle->articulo_id,
+                        'bodega_id' => $movimiento->bodega_id,
+                        'empresa_id' => $detalle->empresa_id,
+                        'unidad_id' => $detalle->unidad_id,
+                    ],
+                    [
+                        'cantidad' => DB::raw("cantidad + {$detalle->cantidad}"),
+                        'estado' => 1, // Estado activo
+                    ]
+                );
+
+                $num_entregados_ahora++;
             }
 
-            if ($num_max_detalle == ($num_detalle_entregados + $num_entregados_ahora)) {
-                $solicitud->update([
-                    "estado" => 4,
-                    "observacion_entrega" => $request["observacion_entrega"],
-                    "fecha_entrega" => Carbon::now()
-                ]);
-            } else {
-                $solicitud->update([
-                    "estado" => 3,
-                    "observacion_entrega" => $request["observacion_entrega"],
-                    "fecha_entrega" => Carbon::now()
-                ]);
-            }
-            // Confirmar transacción
-            DB::commit();
+            // Calcular el nuevo estado del movimiento
+            $nuevo_estado = $movimiento->detalles_movimientos->count() ===
+                ($movimiento->detalle_entregados->count() + $num_entregados_ahora)
+                ? 4 // Estado completado
+                : 3; // Estado parcial
 
-            return $solicitud;
-        } catch (\Throwable $e) {
-            // Revierte la transacción en caso de error
-            DB::rollBack();
-            Log::error('Error al crear o actualizar la factura: ' . $e->getMessage());
-            throw new HttpException(500, $e->getMessage());
-        }
+            // Actualizar el estado y la observación del movimiento
+            $movimiento->update([
+                "estado" => $nuevo_estado,
+                "observacion_entrega" => $request['observacion_entrega'] ?? null,
+                "fecha_entrega" => Carbon::now(),
+            ]);
+
+            return $movimiento;
+        });
     }
 }
