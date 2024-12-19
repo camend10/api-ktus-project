@@ -2,6 +2,7 @@
 
 namespace App\Services\Facturas;
 
+use App\Models\Articulos\BodegaArticulo;
 use App\Models\Facturas\DetalleFactura;
 use App\Models\Facturas\Factura;
 use App\Models\Facturas\FacturaDeliverie;
@@ -200,6 +201,15 @@ class FacturaService
                     "unidad_id" => $detalle["unidad_id"],
                     "total_descuento" => $detalle["total_descuento"],
                 ]);
+
+                // Procesar la salida del inventario
+                $result = $this->procesarSalida($detalle, $user);
+
+                // Si hay un error en el proceso de salida, revierte la transacción
+                if (isset($result['error']) && $result['error']) {
+                    DB::rollBack();
+                    return $result;
+                }
             }
 
             if (isset($request["sede_deliverie_id"])) {
@@ -406,5 +416,40 @@ class FacturaService
         $detalle = DetalleFactura::findOrFail($id);
 
         $detalle->delete();
+    }
+
+
+    /**
+     * Procesar salida del inventario
+     */
+    private function procesarSalida($detalle, $user)
+    {
+        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle["articulo"]["id"])
+            ->where('unidad_id', $detalle["unidad_id"])
+            ->where('bodega_id', $user->sede_id)
+            ->where('empresa_id', $user->empresa_id)
+            ->first();
+
+        if (!$bodega_articulo) {
+            return [
+                'error' => true,
+                'code' => 403,
+                'message' => 'El producto ' . $detalle["articulo"]["nombre"] . ' no está disponible en inventario.'
+            ];
+        }
+
+        if ($bodega_articulo->cantidad < $detalle["cantidad_item"]) {
+            return [
+                'error' => true,
+                'code' => 403,
+                'message' => 'El producto ' . $detalle["articulo"]["nombre"] . ' no tiene suficiente cantidad en inventario.'
+            ];
+        }
+
+        $bodega_articulo->update([
+            "cantidad" => $bodega_articulo->cantidad - $detalle["cantidad_item"]
+        ]);
+
+        return ['error' => false];
     }
 }

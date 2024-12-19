@@ -9,6 +9,8 @@ use App\Http\Resources\Movimientos\MovimientoResource;
 use App\Models\Movimientos\Movimiento;
 use App\Services\Movimientos\MovimientoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class MovimientoController extends Controller
 {
@@ -67,26 +69,38 @@ class MovimientoController extends Controller
 
         try {
             $result = $this->movimientoService->update($validated, $id);
-            
-            if (isset($result['error'])) {                
+
+            if (isset($result['error']) && $result['error']) {
+                $movimiento = $this->movimientoService->getById($id);
                 return response()->json([
-                    'message' => 403,
-                    'message_text' => $result['message']
+                    'message' => $result['code'],
+                    'message_text' => $result['message'],
+                    'movimiento' => MovimientoResource::make($movimiento),
                 ]);
             }
 
-            $message_text = ($request->estado == 4)
+            // Definir mensaje según estado
+            $message_text = ($validated['estado'] == 4)
                 ? 'El movimiento se aprobó de manera exitosa'
                 : 'El movimiento se editó de manera exitosa';
 
             return response()->json([
                 'message' => 200,
                 'message_text' => $message_text,
-                'movimiento' => MovimientoResource::make($result),
+                'movimiento' => MovimientoResource::make($result['movimiento']),
             ]);
         } catch (\Exception $e) {
-            // Lanza nuevamente la excepción para que se gestione adecuadamente
-            throw $e;
+            if ($e->getCode() === 403) {
+                return response()->json([
+                    'message' => $e->getCode(),
+                    'message_text' => $e->getMessage(),
+                ], $e->getCode());
+            }
+
+            return response()->json([
+                'message' => 500,
+                'message_text' => 'Ocurrió un error inesperado durante la actualización del movimiento.',
+            ], 500);
         }
     }
 

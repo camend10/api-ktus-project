@@ -13,6 +13,7 @@ use App\Services\Facturas\FacturaService;
 use App\Services\GeneralService;
 use App\Services\UsuarioService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -68,22 +69,40 @@ class FacturaController extends Controller
         try {
             $factura = $this->facturaService->store($validated);
 
-            if (!$factura) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+            // Verificar si el servicio retornó un error
+            if (isset($factura['error']) && $factura['error']) {
+                // Si hay un error, elimina la imagen subida
+                if ($imagenPath) {
+                    Storage::delete($imagenPath);
+                }
+
+                return response()->json([
+                    'message' => $factura['code'],
+                    'message_text' => $factura['message'],
+                ], $factura['code']);
             }
 
+            // Respuesta exitosa
             return response()->json([
                 'message' => 200,
-                'message_text' => 'La factura se registró de manera exitosa',
-                'factura' => FacturaResource::make($factura)
+                'message_text' => 'La factura se registró de manera exitosa.',
+                'factura' => FacturaResource::make($factura),
             ]);
         } catch (\Exception $e) {
             // Si hay un error, elimina la imagen subida
             if ($imagenPath) {
                 Storage::delete($imagenPath);
             }
-            // Lanza nuevamente la excepción para que se gestione adecuadamente
-            throw $e;
+            // Manejo de excepciones
+            Log::error('Error al crear la factura: ' . $e->getMessage(), [
+                'stack' => $e->getTrace(),
+            ]);
+
+            // Retorna un error genérico
+            return response()->json([
+                'message' => 500,
+                'message_text' => 'Ocurrió un error inesperado durante la creación de la factura.',
+            ], 500);
         }
     }
 

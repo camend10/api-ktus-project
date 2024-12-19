@@ -128,166 +128,42 @@ class MovimientoService
             // Inicia la transacción
             DB::beginTransaction();
 
-            // Determina si es una actualización o creación
+            // Crear o actualizar movimiento
             $movimiento = $id ? Movimiento::findOrFail($id) : new Movimiento();
-
-            // Asignar datos comunes a la factura
-            $movimiento->fill([
-                'fecha_emision' => $request["fecha_emision"],
-                'tipo_movimiento' => $request["tipo_movimiento"],
-                'observacion' => $request["observacion"],
-                'observacion_entrega' => $request["observacion_entrega"],
-                'destino' => $request["destino"],
-                'total' => $request["total"],
-                'user_id' => $request["user_id"],
-                'bodega_id' => $request["bodega_id"],
-                'plantilla_id' => $request["plantilla_id"],
-                'proveedor_id' => $request["proveedor_id"],
-                'empresa_id' => $request["empresa_id"],
-                'sede_id' => $request["sede_id"],
-                'estado' => $request["estado"],
-                'fecha_entrega' => $request["fecha_entrega"],
-            ]);
-
+            $this->fillMovimiento($movimiento, $request);
             $movimiento->save();
 
-            // Sincronizar detalles de factura
+            // Sincronizar detalles
             $detalles = $request["detalles_movimientos"] ?? [];
-            // Log::error('Error al crear la factura: ' . json_encode($detalle_factura));
+            $detalle_ids = $this->syncDetalles($movimiento, $detalles);
 
-            $detalle_ids = [];
-
-            foreach ($detalles as $detalle) {
-                $detalle_model = DetalleMovimiento::updateOrCreate(
-                    [
-                        "movimiento_id" => $movimiento->id,
-                        "articulo_id" => $detalle["articulo"]["id"],
-                    ],
-                    [
-                        'cantidad' => $detalle["cantidad"],
-                        'cantidad_recibida' => $detalle["cantidad_recibida"],
-                        'total' => $detalle["total"],
-                        'estado' => $detalle["estado"],
-                        'unidad_id' => $detalle["unidad"]["id"],
-                        'costo' => $detalle["costo"],
-                        'empresa_id' => $detalle["empresa_id"],
-                        'sede_id' => $detalle["sede_id"],
-                        'user_id' => $detalle["user_id"],
-                        'fecha_entrega' => $detalle["fecha_entrega"],
-                    ]
-                );
-                $detalle_ids[] = $detalle_model->id;
-            }
-
-            // Eliminar registros que no estén en los nuevos detalles
+            // Eliminar detalles antiguos
             DetalleMovimiento::where("movimiento_id", $movimiento->id)
                 ->whereNotIn("id", $detalle_ids)
                 ->delete();
 
-
+            // Procesar entrada o salida si el estado es aprobado
             if ($request["estado"] == 4) {
-                // ENTRADAS Y SALIDAS DE ARTICULOS
-                $movimiento = Movimiento::findOrFail($id);
-
-                //SALIDA
-                if ($request["tipo_movimiento"] == 2) {
-
-                    // Validacion
-                    foreach ($movimiento->detalles_movimientos as $detalle) {
-
-                        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
-                            ->where('unidad_id', $detalle->unidad_id)
-                            ->where('bodega_id', $movimiento->bodega_id)
-                            ->where('empresa_id', $movimiento->empresa_id)
-                            ->first();
-
-                        if (!$bodega_articulo) {
-
-                            return [
-                                'error' => true,
-                                'code' => 403,
-                                'message' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad'
-                            ];
-                        }
-
-                        if ($bodega_articulo->cantidad < $detalle->cantidad) {
-                            // Log::info('movimiento:', ['movimiento' => $movimiento]);
-                            // Log::info('detalle movimiento:', ['detalle' => $detalle]);
-                            // dd($bodega_articulo);
-                            return [
-                                'error' => true,
-                                'code' => 403,
-                                'message' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad para realizar esta salida'
-                            ];
-                        }
-                    }
-                    // Validacion
-
-
-                    foreach ($movimiento->detalles_movimientos as $key => $detalle) {
-                        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
-                            ->where('unidad_id', $detalle->unidad_id)
-                            ->where('bodega_id', $movimiento->bodega_id)
-                            ->where('empresa_id', $movimiento->empresa_id)
-                            ->first();
-
-                        $bodega_articulo->update([
-                            "cantidad" => $bodega_articulo->cantidad - $detalle->cantidad
-                        ]);
-
-                        $detalle->update([
-                            "estado" => 2,
-                            "user_id" => $user->id,
-                            "fecha_entrega" => Carbon::now(),
-                        ]);
-                    }
+                $result = $this->procesarMovimiento($movimiento, $request["tipo_movimiento"], $user);
+                // Si hay un error, retorna el error
+                if (isset($result['error']) && $result['error']) {
+                    DB::rollBack(); // Revierte la transacción en caso de error
+                    return $result;
                 }
-                //SALIDA
 
-                //ENTRADA
-                if ($request["tipo_movimiento"] == 1) {
-                    foreach ($movimiento->detalles_movimientos as $detalle) {
-                        $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
-                            ->where('unidad_id', $detalle->unidad_id)
-                            ->where('bodega_id', $movimiento->bodega_id)
-                            ->where('empresa_id', $movimiento->empresa_id)
-                            ->first();
-                        // Log::info('movimiento:', ['movimiento' => $movimiento]);
-                        // Log::info('detalle movimiento:', ['detalle' => $detalle]);
-                        // dd($bodega_articulo);
-
-                        if (!$bodega_articulo) {
-                            // Crear un nuevo registro si no existe
-                            BodegaArticulo::create([
-                                'articulo_id' => $detalle->articulo_id,
-                                'bodega_id' => $movimiento->bodega_id,
-                                'empresa_id' => $detalle->empresa_id,
-                                'unidad_id' => $detalle->unidad_id,
-                                'cantidad' => $detalle->cantidad,
-                                'estado' => 1, // Estado activo
-                            ]);
-                        } else {
-                            $bodega_articulo->update([
-                                "cantidad" => $bodega_articulo->cantidad + $detalle->cantidad
-                            ]);
-                        }
-
-                        $detalle->update([
-                            "estado" => 2,
-                            "user_id" => $user->id,
-                            "fecha_entrega" => Carbon::now(),
-                        ]);
-                    }
-                }
-                //ENTRADA
-
-                // ENTRADAS Y SALIDAS DE ARTICULOS
+                $movimiento->update([
+                    "fecha_entrega" => Carbon::now()
+                ]);
             }
 
             // Confirmar transacción
             DB::commit();
 
-            return $movimiento;
+            // Retorno exitoso
+            return [
+                'error' => false,
+                'movimiento' => $movimiento,
+            ];
         } catch (\Throwable $e) {
             // Revierte la transacción en caso de error
             DB::rollBack();
@@ -413,5 +289,174 @@ class MovimientoService
 
             return $movimiento;
         });
+    }
+
+    /**
+     * Rellenar datos del movimiento
+     */
+    private function fillMovimiento($movimiento, $request)
+    {
+        $movimiento->fill([
+            'fecha_emision' => $request["fecha_emision"],
+            'tipo_movimiento' => $request["tipo_movimiento"],
+            'observacion' => $request["observacion"],
+            'observacion_entrega' => $request["observacion_entrega"],
+            'destino' => $request["destino"],
+            'total' => $request["total"],
+            'user_id' => $request["user_id"],
+            'bodega_id' => $request["bodega_id"],
+            'plantilla_id' => $request["plantilla_id"],
+            'proveedor_id' => $request["proveedor_id"],
+            'empresa_id' => $request["empresa_id"],
+            'sede_id' => $request["sede_id"],
+            'estado' => $request["estado"],
+            'fecha_entrega' => $request["fecha_entrega"],
+        ]);
+    }
+
+    /**
+     * Sincronizar detalles del movimiento
+     */
+    private function syncDetalles($movimiento, $detalles)
+    {
+        $detalle_ids = [];
+        foreach ($detalles as $detalle) {
+            $detalle_model = DetalleMovimiento::updateOrCreate(
+                [
+                    "movimiento_id" => $movimiento->id,
+                    "articulo_id" => $detalle["articulo"]["id"],
+                ],
+                [
+                    'cantidad' => $detalle["cantidad"],
+                    'cantidad_recibida' => $detalle["cantidad_recibida"],
+                    'total' => $detalle["total"],
+                    'estado' => $detalle["estado"],
+                    'unidad_id' => $detalle["unidad"]["id"],
+                    'costo' => $detalle["costo"],
+                    'empresa_id' => $detalle["empresa_id"],
+                    'sede_id' => $detalle["sede_id"],
+                    'user_id' => $detalle["user_id"],
+                    'fecha_entrega' => $detalle["fecha_entrega"],
+                ]
+            );
+            $detalle_ids[] = $detalle_model->id;
+        }
+        return $detalle_ids;
+    }
+
+    /**
+     * Procesar entrada o salida del inventario
+     */
+    private function procesarMovimiento($movimiento, $tipo_movimiento, $user)
+    {
+        if ($tipo_movimiento == 2) { // SALIDA
+            $result = $this->procesarSalida($movimiento, $user);           
+            return $result; // Retorna el resultado de procesar la salida
+        } elseif ($tipo_movimiento == 1) { // ENTRADA
+            $result = $this->procesarEntrada($movimiento, $user);
+            return $result; // Retorna el resultado de procesar la entrada
+        }
+
+        // Retorno por defecto en caso de que el tipo de movimiento no sea válido
+        return [
+            'error' => true,
+            'code' => 400,
+            'message' => 'Tipo de movimiento no válido.',
+        ];
+    }
+
+    /**
+     * Procesar salida del inventario
+     */
+    private function procesarSalida($movimiento, $user)
+    {
+        foreach ($movimiento->detalles_movimientos as $detalle) {
+            $bodega_articulo = $this->obtenerBodegaArticulo($movimiento, $detalle);
+            
+            // Condición: El artículo no existe en la bodega
+            if (!$bodega_articulo) {
+                return [
+                    'error' => true,
+                    'code' => 403,
+                    'message' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad.'
+                ];
+            }
+            
+            if ($bodega_articulo->cantidad < $detalle->cantidad) {
+                
+                return [
+                    'error' => true,
+                    'code' => 403,
+                    'message' => 'El producto ' . $detalle->articulo->nombre . ' no cuenta con la disponibilidad suficiente para realizar esta salida.'
+                ];
+            }
+            
+            $bodega_articulo->update([
+                "cantidad" => $bodega_articulo->cantidad - $detalle->cantidad
+            ]);            
+
+            $detalle->update([
+                "estado" => 2,
+                "user_id" => $user->id,
+                "fecha_entrega" => Carbon::now(),
+            ]);
+            
+            return true;
+        }
+    }
+
+    /**
+     * Procesar entrada al inventario
+     */
+    private function procesarEntrada($movimiento, $user)
+    {
+        foreach ($movimiento->detalles_movimientos as $detalle) {
+            $bodega_articulo = $this->obtenerBodegaArticulo($movimiento, $detalle);
+
+            if (!$bodega_articulo) {
+                BodegaArticulo::create([
+                    'articulo_id' => $detalle->articulo_id,
+                    'bodega_id' => $movimiento->bodega_id,
+                    'empresa_id' => $detalle->empresa_id,
+                    'unidad_id' => $detalle->unidad_id,
+                    'cantidad' => $detalle->cantidad,
+                    'estado' => 1, // Estado activo
+                ]);
+            } else {
+                $bodega_articulo->update([
+                    "cantidad" => $bodega_articulo->cantidad + $detalle->cantidad
+                ]);
+            }
+
+            $detalle->update([
+                "estado" => 2,
+                "user_id" => $user->id,
+                "fecha_entrega" => Carbon::now(),
+            ]);
+        }
+    }
+
+    /**
+     * Obtener artículo de la bodega
+     */
+    private function obtenerBodegaArticulo($movimiento, $detalle)
+    {
+        return BodegaArticulo::where('articulo_id', $detalle->articulo_id)
+            ->where('unidad_id', $detalle->unidad_id)
+            ->where('bodega_id', $movimiento->bodega_id)
+            ->where('empresa_id', $movimiento->empresa_id)
+            ->first();
+    }
+
+    /**
+     * Manejo de errores
+     */
+    private function generarError($message, $code = 403)
+    {
+        return [
+            'error' => true,
+            'code' => $code,
+            'message' => $message,
+        ];
     }
 }
