@@ -79,7 +79,7 @@ class FacturaController extends Controller
                 return response()->json([
                     'message' => $factura['code'],
                     'message_text' => $factura['message'],
-                ], $factura['code']);
+                ]);
             }
 
             // Respuesta exitosa
@@ -123,8 +123,17 @@ class FacturaController extends Controller
         try {
             $factura = $this->facturaService->update($validated, $id);
 
-            if (!$factura) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+            // Verificar si el servicio retornó un error
+            if (isset($factura['error']) && $factura['error']) {
+                // Si hay un error, elimina la imagen subida
+                if ($imagenPath) {
+                    Storage::delete($imagenPath);
+                }
+
+                return response()->json([
+                    'message' => $factura['code'],
+                    'message_text' => $factura['message'],
+                ]);
             }
 
             return response()->json([
@@ -137,37 +146,51 @@ class FacturaController extends Controller
             if ($imagenPath) {
                 Storage::delete($imagenPath);
             }
-            // Lanza nuevamente la excepción para que se gestione adecuadamente
-            throw $e;
+
+            Log::error('Error al actualizar la factura: ' . $e->getMessage(), [
+                'stack' => $e->getTrace(),
+            ]);
+
+            return response()->json([
+                'message' => 500,
+                'message_text' => 'Ocurrió un error inesperado durante la actualización de la factura.',
+            ], 500);
         }
     }
 
     public function cambiarEstado(Request $request, $id)
     {
         $this->authorize('delete', Factura::class);
+       
+        try {
+            $factura = $this->facturaService->cambiarEstado($request, $id);
 
-        $factura = $this->facturaService->cambiarEstado($request, $id);
+            // Verificar si el servicio retornó un error
+            if (isset($factura['error']) && $factura['error']) {
+                return response()->json([
+                    'message' => $factura['code'],
+                    'message_text' => $factura['message'],
+                ]);
+            }
 
-        if ($request->estado == "1" || $request->estado == 1) {
-            $texto = 'Factura activada de manera exitosa';
-        } else {
-            $texto = 'Factura eliminada de manera exitosa';
-        }
+            $factura = $this->facturaService->getById($id);
 
-        if ($factura == false) {
             return response()->json([
-                'message' => 403,
-                'message_text' => 'Factura no encontrada',
-                'factura' => []
-            ], 403);
-        }
+                'message' => 200,
+                'message_text' => 'La factura y sus detalles se han eliminado correctamente.',
+                'factura' => FacturaResource::make($factura)
+            ]);
 
-        $factura = $this->facturaService->getById($id);
-        return response()->json([
-            'message' => 200,
-            'message_text' => $texto,
-            'factura' => FacturaResource::make($factura)
-        ]);
+        } catch (\Exception $e) {
+            Log::error('Error al eliminar la factura: ' . $e->getMessage(), [
+                'stack' => $e->getTrace(),
+            ]);
+
+            return response()->json([
+                'message' => 500,
+                'message_text' => 'Ocurrió un error inesperado durante la eliminación de la factura.',
+            ], 500);
+        }
     }
 
     public function export_factura(Request $request)

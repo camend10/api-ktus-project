@@ -3,6 +3,7 @@
 namespace App\Models\Facturas;
 
 use App\Models\Articulos\Articulo;
+use App\Models\Configuracion\Bodega;
 use App\Models\Configuracion\Categoria;
 use App\Models\Configuracion\Iva;
 use App\Models\Configuracion\Sede;
@@ -33,7 +34,8 @@ class DetalleFactura extends Model
         'descuento',
         'sub_total',
         'unidad_id',
-        'total_descuento'
+        'total_descuento',
+        'bodega_id',
     ];
 
     protected $casts = [
@@ -52,6 +54,7 @@ class DetalleFactura extends Model
         'descuento' => 'float',
         'sub_total' => 'float',
         'total_descuento' => 'float',
+        'bodega_id' => 'integer',
     ];
 
     public function setCreatedAtAttribute($value)
@@ -99,5 +102,10 @@ class DetalleFactura extends Model
     public function unidad()
     {
         return $this->belongsTo(Unidad::class, 'unidad_id')->withDefault();
+    }
+
+    public function bodega()
+    {
+        return $this->belongsTo(Bodega::class, 'bodega_id')->withDefault();
     }
 }

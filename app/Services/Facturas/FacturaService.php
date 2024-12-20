@@ -184,7 +184,7 @@ class FacturaService
             $detalle_factura = $request["detalle_factura"] ?? [];
 
             foreach ($detalle_factura as $detalle) {
-                DetalleFactura::create([
+                $detalle_creado = DetalleFactura::create([
                     "precio_item" => $detalle["precio_item"],
                     "total_precio" => $detalle["total_precio"],
                     "total_iva" => $detalle["total_iva"],
@@ -200,10 +200,11 @@ class FacturaService
                     "sub_total" => $detalle["sub_total"],
                     "unidad_id" => $detalle["unidad_id"],
                     "total_descuento" => $detalle["total_descuento"],
+                    "bodega_id" => $detalle["bodega_id"],
                 ]);
 
                 // Procesar la salida del inventario
-                $result = $this->procesarSalida($detalle, $user);
+                $result = $this->procesarSalida($detalle_creado, $user);
 
                 // Si hay un error en el proceso de salida, revierte la transacción
                 if (isset($result['error']) && $result['error']) {
@@ -271,7 +272,8 @@ class FacturaService
             DB::beginTransaction();
 
             // Determina si es una actualización o creación
-            $factura = $id ? Factura::findOrFail($id) : new Factura();
+            // $factura = $id ? Factura::findOrFail($id) : new Factura();
+            $factura = Factura::findOrFail($id);
 
             // Asignar datos comunes a la factura
             $factura->fill([
@@ -300,27 +302,47 @@ class FacturaService
             $detalle_ids = [];
 
             foreach ($detalle_factura as $detalle) {
-                $detalle_model = DetalleFactura::updateOrCreate(
-                    [
-                        "factura_id" => $factura->id,
-                        "articulo_id" => $detalle["articulo"]["id"],
-                    ],
-                    [
-                        "precio_item" => $detalle["precio_item"],
-                        "total_precio" => $detalle["total_precio"],
-                        "total_iva" => $detalle["total_iva"],
-                        "cantidad_item" => $detalle["cantidad_item"],
-                        "iva_id" => $detalle["iva_id"],
-                        "empresa_id" => $user->empresa_id,
-                        "sede_id" => $user->sede_id,
-                        "estado" => 1,
-                        "categoria_id" => $detalle["articulo"]["categoria_id"],
-                        "descuento" => $detalle["descuento"],
-                        "sub_total" => $detalle["sub_total"],
-                        "unidad_id" => $detalle["unidad_id"],
-                        "total_descuento" => $detalle["total_descuento"],
-                    ]
-                );
+
+                // Busca el detalle existente
+                $detalle_model = DetalleFactura::firstOrNew([
+                    "factura_id" => $factura->id,
+                    "articulo_id" => $detalle["articulo"]["id"],
+                    "unidad_id" => $detalle["unidad_id"],
+                    "bodega_id" => $detalle["bodega_id"],
+                    "empresa_id" => $user->empresa_id
+                ]);
+
+                // Actualiza campos comunes
+                $detalle_model->fill([
+                    "precio_item" => $detalle["precio_item"],
+                    "total_precio" => $detalle["total_precio"],
+                    "total_iva" => $detalle["total_iva"],
+                    "cantidad_item" => $detalle["cantidad_item"],
+                    "iva_id" => $detalle["iva_id"],
+                    "sede_id" => $user->sede_id,
+                    "categoria_id" => $detalle["articulo"]["categoria_id"],
+                    "descuento" => $detalle["descuento"],
+                    "sub_total" => $detalle["sub_total"],
+                    "total_descuento" => $detalle["total_descuento"],
+                ]);
+
+                // Verifica si el detalle requiere procesamiento
+                $requires_processing = !$detalle_model->exists || $detalle_model->estado !== 2;
+
+                // Guardar el detalle
+                $detalle_model->save();
+
+                // Procesar salida solo si es necesario
+                if ($requires_processing) {
+                    $result = $this->procesarSalida($detalle_model, $user);
+
+                    // Si hay un error, revierte la transacción y retorna el error
+                    if (isset($result['error']) && $result['error']) {
+                        DB::rollBack();
+                        return $result;
+                    }
+                }
+
                 $detalle_ids[] = $detalle_model->id;
             }
 
@@ -381,16 +403,82 @@ class FacturaService
 
     public function cambiarEstado($request, $id)
     {
-        $resp = Factura::findOrFail($id);
-        if (!$resp) {
-            return false;
+
+        $user = auth("api")->user();
+
+        if (!$user) {
+            return [
+                'error' => true,
+                'code' => 401,
+                'message' => 'No autorizado.',
+            ];
         }
 
-        $resp->estado = $request["estado"];
-        $resp->save();
+        try {
+            // Inicia la transacción
+            DB::beginTransaction();
 
-        // validacion por usuarios
-        return $resp;
+            // Buscar la factura
+            $factura = $this->getById($id);
+
+            // Verificar que tenga detalles antes de proceder
+            if (!$factura->detalles_facturas || $factura->detalles_facturas->isEmpty()) {
+                return [
+                    'error' => true,
+                    'code' => 404,
+                    'message' => 'No se encontraron detalles para esta factura.',
+                ];
+            }
+
+            // Verificar el estado de la factura antes de eliminar
+            if ($factura->estado === 0) {
+                return [
+                    'error' => true,
+                    'code' => 400,
+                    'message' => 'La factura ya está anulada.',
+                ];
+            }
+
+            // Procesar cada detalle de la factura
+            foreach ($factura->detalles_facturas as $detalle) {
+
+                // Restablecer las cantidades en el inventario
+                $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
+                    ->where('unidad_id', $detalle->unidad_id)
+                    ->where('bodega_id', $detalle->bodega_id)
+                    ->where('empresa_id', $user->empresa_id)
+                    ->first();                
+
+                if ($bodega_articulo) {
+                    $bodega_articulo->update([
+                        'cantidad' => $bodega_articulo->cantidad + $detalle->cantidad_item,
+                    ]);
+
+                    // Cambiar el estado del detalle a 0
+                    $detalle->update([
+                        'estado' => 0,
+                    ]);
+                }
+            }
+
+            // Cambiar el estado de la factura a 0
+            $factura->update([
+                'estado' => 0,
+            ]);
+
+
+            // Confirmar la transacción
+            DB::commit();
+
+            return [
+                'error' => false,
+            ];
+        } catch (\Throwable $e) {
+            // Revertir la transacción en caso de error
+            DB::rollBack();
+            Log::error('Error al eliminar la factura: ' . $e->getMessage());
+            throw new HttpException(500, 'Error al eliminar la factura.');
+        }
     }
 
     public function getById($id)
@@ -418,7 +506,6 @@ class FacturaService
         $detalle->delete();
     }
 
-
     /**
      * Procesar salida del inventario
      */
@@ -426,7 +513,7 @@ class FacturaService
     {
         $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle["articulo"]["id"])
             ->where('unidad_id', $detalle["unidad_id"])
-            ->where('bodega_id', $user->sede_id)
+            ->where('bodega_id', $detalle["bodega_id"])
             ->where('empresa_id', $user->empresa_id)
             ->first();
 
@@ -448,6 +535,11 @@ class FacturaService
 
         $bodega_articulo->update([
             "cantidad" => $bodega_articulo->cantidad - $detalle["cantidad_item"]
+        ]);
+
+        // Actualizar el estado del detalle
+        $detalle->update([
+            "estado" => 2,
         ]);
 
         return ['error' => false];

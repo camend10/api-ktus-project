@@ -64,6 +64,9 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'empresa_id' => 'integer',
+        'sede_id' => 'integer',
+        'estado' => 'integer',
     ];
 
     /**
