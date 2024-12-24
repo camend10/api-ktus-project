@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Configuracion\Sede;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -33,5 +34,11 @@ class Empresa extends Model
     public function municipio()
     {
         return $this->belongsTo(Municipio::class)->withDefault();
+    }
+
+    // Relación con sedes
+    public function sedes()
+    {
+        return $this->hasMany(Sede::class, 'empresa_id');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use App\Models\Empresa;
 use App\Models\User;
 // use Validator;
 use Illuminate\Support\Facades\Validator;
@@ -19,7 +20,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'verificar']]);
     }
 
 
@@ -58,12 +59,15 @@ class AuthController extends Controller
     public function login()
     {
 
+        $empresa_id = request()->empresa_id;
+        $sede_id = request()->sede_id;
+
         $credentials = request(['email', 'password']);
         if (! $token = auth('api')->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        return $this->respondWithToken($token);
+        return $this->respondWithToken($token, $empresa_id, $sede_id);
     }
 
     /**
@@ -85,7 +89,7 @@ class AuthController extends Controller
     {
         auth()->logout();
 
-        return response()->json(['message' => 'Successfully logged out']);
+        return response()->json(['message' => 'Cerró sesión exitosamente']);
     }
 
     /**
@@ -123,7 +127,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithToken($token)
+    protected function respondWithToken($token, $empresa_id = null, $sede_id = null)
     {
         $guard = auth('api');
         $user = $guard->user();
@@ -140,6 +144,15 @@ class AuthController extends Controller
 
         if (! $guard instanceof JWTGuard) {
             throw new RuntimeException('Wrong guard returned.');
+        }
+
+        /** @var \App\Models\User $user */
+        if (!is_null($sede_id)) {
+            if ($user->role_id == 1) {
+                $user->empresa_id = $empresa_id;
+            }
+            $user->sede_id = $sede_id;
+            $user->save();
         }
 
         $sedes = $user->sedes->map(function ($sede) {
@@ -193,5 +206,35 @@ class AuthController extends Controller
             ]
             // 'user' => $guard->user()
         ]);
+    }
+
+    public function verificar()
+    {
+        $email = request()->email;
+
+        $user = User::with([
+            'empresa',
+            'sedes'
+        ])
+            ->where('email', $email)
+            ->where('estado', 1)
+            ->first();
+
+        $empresas = Empresa::with([
+            'sedes'
+        ])->where('estado', 1)->get();
+
+        if ($user) {
+            return response()->json([
+                'sedes' => $user->sedes ?? [],
+                'empresas' => $empresas,
+                'role_id' => $user->role_id,
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 403,
+                'error' => "El usuario no existe ",
+            ], 200);
+        }
     }
 }

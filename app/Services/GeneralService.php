@@ -14,6 +14,7 @@ use App\Models\Configuracion\Unidad;
 use App\Models\Departamento;
 use App\Models\Empresa;
 use App\Models\Genero;
+use App\Models\Movimientos\Plantilla;
 use App\Models\Municipio;
 use App\Models\TipoDocumento;
 use App\Models\User;
@@ -144,5 +145,19 @@ class GeneralService
     {
         return Empresa::where('id', $empresa_id)
             ->first();
+    }
+
+    public function plantillas($empresa_id)
+    {
+        return Plantilla::with([
+            'empresa',
+            'sede',
+            'usuario',
+            'detalles_plantillas.articulo',
+            'detalles_plantillas.unidad'
+        ])
+            ->where('empresa_id', $empresa_id)
+            ->where('estado', 1)
+            ->get();
     }
 }

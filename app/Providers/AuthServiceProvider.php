@@ -17,6 +17,7 @@ use App\Models\Configuracion\SegmentoCliente;
 use App\Models\Configuracion\Unidad;
 use App\Models\Facturas\Factura;
 use App\Models\Movimientos\Movimiento;
+use App\Models\Movimientos\Plantilla;
 use App\Models\Movimientos\Solicitud;
 use App\Models\User;
 use App\Policies\ArticuloPolicy;
@@ -27,6 +28,7 @@ use App\Policies\FacturaPolicy;
 use App\Policies\IvaPolicy;
 use App\Policies\MetodoPagoPolicy;
 use App\Policies\MovimientoPolicy;
+use App\Policies\PlantillaPolicy;
 use App\Policies\ProveedorPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\SedeDeliveriePolicy;
@@ -63,6 +65,7 @@ class AuthServiceProvider extends ServiceProvider
         Factura::class => FacturaPolicy::class,
         Solicitud::class => SolicitudPolicy::class,
         Movimiento::class => MovimientoPolicy::class,
+        Plantilla::class => PlantillaPolicy::class,
     ];
 
     /**

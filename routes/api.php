@@ -18,6 +18,7 @@ use App\Http\Controllers\Configuracion\UnidadController;
 use App\Http\Controllers\Facturas\FacturaController;
 use App\Http\Controllers\Generales\GeneralesController;
 use App\Http\Controllers\Movimientos\MovimientoController;
+use App\Http\Controllers\Movimientos\PlantillaController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Solicitudes\SolicitudController;
 use App\Http\Controllers\Usuarios\UsuarioController;
@@ -50,6 +51,7 @@ Route::group([
     Route::post('/login', [AuthController::class, 'login'])->name('login');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/me', [AuthController::class, 'me'])->name('me');
+    Route::post('/verificar', [AuthController::class, 'verificar'])->name('verificar');
 });
 
 Route::group([
@@ -169,4 +171,8 @@ Route::group([
     Route::post('/movimientos/index', [MovimientoController::class, 'index']);
     Route::patch('/movimientos/{id}/cambiar-estado', [MovimientoController::class, 'cambiarEstado']);
     Route::resource("movimientos", MovimientoController::class);
+
+    Route::post('/plantillas/index', [PlantillaController::class, 'index']);
+    Route::patch('/plantillas/{id}/cambiar-estado', [PlantillaController::class, 'cambiarEstado']);
+    Route::resource("plantillas", PlantillaController::class);
 });

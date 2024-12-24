@@ -33,6 +33,14 @@ class Sede extends Model
         'municipio_id',
     ];
 
+    protected $casts = [
+        'empresa_id' => 'integer',
+        'departamento_id' => 'integer',
+        'estado' => 'integer',
+        'municipio_id' => 'integer',
+    ];
+
+
     public function setCreatedAtAttribute($value)
     {
         // date_default_timezone_set("America/Bogota");

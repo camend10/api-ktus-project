@@ -67,6 +67,7 @@ class User extends Authenticatable implements JWTSubject
         'empresa_id' => 'integer',
         'sede_id' => 'integer',
         'estado' => 'integer',
+        'role_id' => 'integer',
     ];
 
     /**
