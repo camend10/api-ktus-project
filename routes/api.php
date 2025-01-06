@@ -3,6 +3,7 @@
 use App\Http\Controllers\Articulos\ArticuloController;
 use App\Http\Controllers\Articulos\ArticuloWalletController;
 use App\Http\Controllers\Articulos\BodegaArticuloController;
+use App\Http\Controllers\Articulos\ConversionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Clientes\ClienteController;
 use App\Http\Controllers\Configuracion\BodegaController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Configuracion\SegmentoClienteController;
 use App\Http\Controllers\Configuracion\UnidadController;
 use App\Http\Controllers\Facturas\FacturaController;
 use App\Http\Controllers\Generales\GeneralesController;
+use App\Http\Controllers\Kardex\KardexController;
 use App\Http\Controllers\Movimientos\MovimientoController;
 use App\Http\Controllers\Movimientos\PlantillaController;
 use App\Http\Controllers\RolePermissionController;
@@ -74,6 +76,7 @@ Route::group([
     Route::post('/empresas', [GeneralesController::class, 'empresas']);
     Route::post('/configuraciones', [GeneralesController::class, 'configuraciones']);
     Route::post('/configuraciones/articulos', [GeneralesController::class, 'articulos']);
+    Route::post('/configuraciones/conversiones', [GeneralesController::class, 'config']);    
 });
 
 Route::group([
@@ -125,9 +128,17 @@ Route::group([
     Route::resource("articulos", ArticuloController::class);
     Route::resource("articulos-wallets", ArticuloWalletController::class);
     Route::resource("bodegas-articulos", BodegaArticuloController::class);
+
+    Route::post('/conversiones/index', [ConversionController::class, 'index']);
+    Route::patch('/conversiones/{id}/cambiar-estado', [ConversionController::class, 'cambiarEstado']);
+    Route::resource("conversiones", ConversionController::class);
+
+    Route::post('/kardex/index', [KardexController::class, 'index']);
+    Route::resource("kardex", KardexController::class);
 });
 
 Route::get('/excel/export-articulo', [ArticuloController::class, 'export_articulo']);
+Route::get('/excel/export-kardex', [KardexController::class, 'export_kardex']);
 
 Route::group([
     'middleware' => 'auth:api',

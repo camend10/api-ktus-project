@@ -70,7 +70,8 @@ class GeneralService
 
     public function unidades($empresa_id)
     {
-        return Unidad::where('empresa_id', $empresa_id)
+        return Unidad::with(['transformacion.unidad_to'])
+            ->where('empresa_id', $empresa_id)
             ->where('estado', 1)
             ->get();
     }

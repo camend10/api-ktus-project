@@ -215,4 +215,36 @@ class GeneralesController extends Controller
             ], 500);
         }
     }
+
+    public function config(Request $request)
+    {
+        $bodegas = $this->generalService->bodegas($request->empresa_id);
+        $unidades = $this->generalService->unidades($request->empresa_id);
+        $empresas = $this->generalService->empresas($request->empresa_id);
+
+        if ($bodegas) {
+            return response()->json([
+                'bodegas' => $bodegas,
+                'empresas' => $empresas,
+                'unidades' => $unidades,
+                // 'unidades' => $unidades->map(function ($unidad) {
+                //     return [
+                //         "id" => $unidad->id,
+                //         "nombre" => $unidad->nombre,
+                //         "transformacion" => $unidad->transformacion->map(function ($trans) {
+                //             return [
+                //                 "id" => $trans->unidad_to->id,
+                //                 "nombre" => $trans->unidad_to->nombre,
+                //             ];
+                //         })
+                //     ];
+                // }),
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 403,
+                'error' => "Lo sentimos, ocurrió un error en el servidor: ",
+            ], 500);
+        }
+    }
 }

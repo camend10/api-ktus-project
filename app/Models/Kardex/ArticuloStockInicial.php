@@ -1,51 +1,39 @@
 <?php
 
-namespace App\Models\Movimientos;
+namespace App\Models\Kardex;
 
 use App\Models\Articulos\Articulo;
 use App\Models\Configuracion\Bodega;
-use App\Models\Configuracion\Sede;
 use App\Models\Configuracion\Unidad;
 use App\Models\Empresa;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DetalleSolicitud extends Model
+class ArticuloStockInicial extends Model
 {
     use HasFactory;
 
-    protected $table = 'detalle_movimientos';
+    protected $table = 'stock_articulos_inicial';
 
     protected $fillable = [
-        'cantidad',
-        'cantidad_recibida',
-        'total',
-        'movimiento_id',
         'articulo_id',
+        'bodega_id',
+        'cantidad',
         'empresa_id',
-        'sede_id',
         'estado',
         'unidad_id',
-        'costo',
-        'user_id',
-        'fecha_entrega',
+        'precio_avg',
     ];
 
     protected $casts = [
-        'fecha_entrega' => 'date',
-        'cantidad' => 'integer',
-        'cantidad_recibida' => 'integer',
-        'estado' => 'integer',
-        'total' => 'float',
-        'costo' => 'float',
-        'empresa_id' => 'integer',
-        'sede_id' => 'integer',
-        'user_id' => 'integer',
-        'movimiento_id' => 'integer',
-        'unidad_id' => 'integer',
         'articulo_id' => 'integer',
+        'unidad_id' => 'integer',
+        'empresa_id' => 'integer',
+        'estado' => 'integer',
+        'bodega_id' => 'integer',
+        'cantidad' => 'integer',
+        'precio_avg' => 'float',
     ];
 
     public function setCreatedAtAttribute($value)
@@ -60,24 +48,9 @@ class DetalleSolicitud extends Model
         $this->attributes["updated_at"] = Carbon::now();
     }
 
-    public function solicitud()
-    {
-        return $this->belongsTo(Solicitud::class, 'movimiento_id')->withDefault();
-    }
-
     public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id')->withDefault();
-    }
-
-    public function sede()
-    {
-        return $this->belongsTo(Sede::class, 'sede_id')->withDefault();
-    }
-
-    public function usuario()
-    {
-        return $this->belongsTo(User::class, 'user_id')->withDefault();
     }
 
     public function articulo()
@@ -88,5 +61,10 @@ class DetalleSolicitud extends Model
     public function unidad()
     {
         return $this->belongsTo(Unidad::class, 'unidad_id')->withDefault();
+    }
+    
+    public function bodega()
+    {
+        return $this->belongsTo(Bodega::class, 'bodega_id')->withDefault();
     }
 }

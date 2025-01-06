@@ -5,6 +5,7 @@ namespace App\Providers;
 // use Illuminate\Support\Facades\Gate;
 
 use App\Models\Articulos\Articulo;
+use App\Models\Articulos\Conversion;
 use App\Models\Clientes\Cliente;
 use App\Models\Configuracion\Bodega;
 use App\Models\Configuracion\Categoria;
@@ -16,6 +17,7 @@ use App\Models\Configuracion\SedeDeliverie;
 use App\Models\Configuracion\SegmentoCliente;
 use App\Models\Configuracion\Unidad;
 use App\Models\Facturas\Factura;
+use App\Models\Kardex\ArticuloStockInicial;
 use App\Models\Movimientos\Movimiento;
 use App\Models\Movimientos\Plantilla;
 use App\Models\Movimientos\Solicitud;
@@ -24,8 +26,10 @@ use App\Policies\ArticuloPolicy;
 use App\Policies\BodegaPolicy;
 use App\Policies\CategoriaPolicy;
 use App\Policies\ClientePolicy;
+use App\Policies\ConversionPolicy;
 use App\Policies\FacturaPolicy;
 use App\Policies\IvaPolicy;
+use App\Policies\KardexPolicy;
 use App\Policies\MetodoPagoPolicy;
 use App\Policies\MovimientoPolicy;
 use App\Policies\PlantillaPolicy;
@@ -66,6 +70,8 @@ class AuthServiceProvider extends ServiceProvider
         Solicitud::class => SolicitudPolicy::class,
         Movimiento::class => MovimientoPolicy::class,
         Plantilla::class => PlantillaPolicy::class,
+        Conversion::class => ConversionPolicy::class,
+        ArticuloStockInicial::class => KardexPolicy::class,
     ];
 
     /**
