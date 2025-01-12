@@ -152,7 +152,7 @@ class FacturaService
     }
 
     public function store($request)
-    {
+    {        
         $user = auth("api")->user();
 
         if (!$user) {

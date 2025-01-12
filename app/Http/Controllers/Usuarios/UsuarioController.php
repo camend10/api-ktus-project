@@ -62,7 +62,7 @@ class UsuarioController extends Controller
                     'role' => $user->role,
                     'roles' => $user->roles,
                     'avatar' => $user->avatar != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $user->avatar : env("APP_URL") . "storage/users/blank.png",
-                    "storage/users/blank.png",
+                    // "storage/users/blank.png",
                     'genero_id' => $user->genero_id,
                     'departamento_id' => $user->departamento_id,
                     'municipio_id' => $user->municipio_id,

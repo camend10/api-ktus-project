@@ -19,6 +19,7 @@ use App\Http\Controllers\Configuracion\UnidadController;
 use App\Http\Controllers\Facturas\FacturaController;
 use App\Http\Controllers\Generales\GeneralesController;
 use App\Http\Controllers\Kardex\KardexController;
+use App\Http\Controllers\Kpi\KpiController;
 use App\Http\Controllers\Movimientos\MovimientoController;
 use App\Http\Controllers\Movimientos\PlantillaController;
 use App\Http\Controllers\RolePermissionController;
@@ -76,7 +77,7 @@ Route::group([
     Route::post('/empresas', [GeneralesController::class, 'empresas']);
     Route::post('/configuraciones', [GeneralesController::class, 'configuraciones']);
     Route::post('/configuraciones/articulos', [GeneralesController::class, 'articulos']);
-    Route::post('/configuraciones/conversiones', [GeneralesController::class, 'config']);    
+    Route::post('/configuraciones/conversiones', [GeneralesController::class, 'config']);
 });
 
 Route::group([
@@ -135,6 +136,17 @@ Route::group([
 
     Route::post('/kardex/index', [KardexController::class, 'index']);
     Route::resource("kardex", KardexController::class);
+
+    Route::group(["prefix" => "kpi"], function ($router) {
+        Route::post('/informacion-general', [KpiController::class, 'informacion_general']);
+        Route::post('/venta-x-sede', [KpiController::class, 'venta_x_sede']);
+        Route::post('/venta-x-dia-del-mes', [KpiController::class, 'venta_x_dia_del_mes']);
+        Route::post('/venta-x-mes-del-year', [KpiController::class, 'venta_x_mes_del_year']);
+        Route::post('/venta-x-segmento', [KpiController::class, 'venta_x_segmento']);
+        Route::post('/vendedor-mas-venta', [KpiController::class, 'vendedor_mas_venta']);
+        Route::post('/categorias-mas-ventas', [KpiController::class, 'categorias_mas_ventas']);
+        Route::post('/fecha-actual', [KpiController::class, 'fecha_actual']);
+    });
 });
 
 Route::get('/excel/export-articulo', [ArticuloController::class, 'export_articulo']);
