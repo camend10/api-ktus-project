@@ -86,6 +86,9 @@ Route::group([
 ], function ($router) {
     Route::resource("roles", RolePermissionController::class);
     Route::post('/users/{id}', [UsuarioController::class, 'update']);
+    Route::post('/users/edit-perfil/{id}', [UsuarioController::class, 'edit_perfil']);
+    Route::post('/users/edit-email/{id}', [UsuarioController::class, 'edit_email']);
+    Route::post('/users/edit-password/{id}', [UsuarioController::class, 'edit_password']);
     Route::patch('/users/{id}/cambiar-estado', [UsuarioController::class, 'cambiarEstadoUser']);
     Route::resource("users", UsuarioController::class);
     Route::patch('/sedes/{id}/cambiar-estado', [SedeController::class, 'cambiarEstado']);

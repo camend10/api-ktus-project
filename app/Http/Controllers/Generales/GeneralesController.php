@@ -22,6 +22,7 @@ class GeneralesController extends Controller
     {
         $departamentos = $this->generalService->getDepartamentos();
         $empresas = $this->generalService->empresas($request->empresa_id);
+        $empresasActivas = $this->generalService->empresasActivas();
         $sedes = $this->generalService->sedes($request->empresa_id);
         $tipodocumentos = $this->generalService->getTipoDocs();
         $generos = $this->generalService->generos();
@@ -53,6 +54,7 @@ class GeneralesController extends Controller
             return response()->json([
                 'departamentos' => $departamentos,
                 'empresas' => $empresas,
+                'empresasActivas' => $empresasActivas,
                 'sedes' => $sedes,
                 'tipodocumentos' => $tipodocumentos,
                 'generos' => $generos,

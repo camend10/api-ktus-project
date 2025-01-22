@@ -144,9 +144,9 @@ class KpiController extends Controller
         $fecha_pasada = Carbon::parse(date("Y") . "-" . str_pad(date("m"), 2, "0", STR_PAD_LEFT) . "-01")
             ->subMonth();
 
-        $vendedor_total_venta_mes_anterior = $this->kpiService->getVendedorVentaMesAnterior($fecha_pasada, $vendedor_mas_venta->vendedor_id);
+        $vendedor_total_venta_mes_anterior = $this->kpiService->getVendedorVentaMesAnterior($fecha_pasada, $vendedor_mas_venta->vendedor_id ?? null);
 
-        $vendedor_total_venta_mes_actual = $vendedor_mas_venta->total_venta;
+        $vendedor_total_venta_mes_actual = $vendedor_mas_venta->total_venta ?? 0;
 
         $porcentajeV = 0;
 
@@ -157,7 +157,7 @@ class KpiController extends Controller
         $inicio_semana = Carbon::now()->startOfWeek();
         $fin_semana = Carbon::now()->endOfWeek();
 
-        $vendedor_venta_semana = $this->kpiService->getVendedorVentaSemana($inicio_semana, $fin_semana, $vendedor_mas_venta->vendedor_id);
+        $vendedor_venta_semana = $this->kpiService->getVendedorVentaSemana($inicio_semana, $fin_semana, $vendedor_mas_venta->vendedor_id ?? null);
 
         Carbon::setLocale('es');
 

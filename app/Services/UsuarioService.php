@@ -148,4 +148,57 @@ class UsuarioService
         // validacion por usuarios
         return $user;
     }
+
+    public function editPerfil($request, $role_id, $id)
+    {
+
+        $user = User::findOrFail($id);
+
+        if (!$user) {
+            return false;
+        }
+
+        // Actualizar usuario, preservando valores existentes para campos faltantes
+        $data = array_merge(
+            $user->toArray(), // Cargar todos los datos actuales del usuario
+            // $request->all()// Sobrescribir solo los campos enviados en el request
+            $request
+        );
+
+        $user->update($data);
+
+        return $user;
+    }
+
+    public function editEmail($request, $id)
+    {
+
+        $user = User::findOrFail($id);
+
+        if (!$user) {
+            return false;
+        }
+
+        // Actualizar solo el campo 'email'
+        $user->update(['email' => $request['email']]);
+
+        return $user;
+    }
+
+    public function edit_password($request, $id)
+    {
+
+        $user = User::findOrFail($id);
+
+        if (!$user) {
+            return false;
+        }
+
+        // Actualizar solo el campo 'email'
+        $user->update([
+            'password' => bcrypt($request['newpassword'])
+        ]);
+
+        return $user;
+    }
 }

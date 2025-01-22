@@ -175,7 +175,7 @@ class MovimientoService
     public function validacion($detalle, $bodega_id)
     {
         // Lógica para manejar cada $detalle_model
-        Log::info('Llamando a movimiento con:', ['detalle' => $detalle]);
+        // Log::info('Llamando a movimiento con:', ['detalle' => $detalle]);
 
         $bodega_articulo = BodegaArticulo::where('articulo_id', $detalle->articulo_id)
             ->where('unidad_id', $detalle->articulo_id)

@@ -63,9 +63,10 @@ class ArticuloController extends Controller
 
         $validated = $request->validated();
 
+        $imagenPath = null;
         if ($request->hasFile("imagen")) {
-            $path = Storage::putFile("articulos", $request->file("imagen"));
-            $validated['imagen'] = $path;
+            $imagenPath = Storage::putFile("articulos", $request->file("imagen"));
+            $validated['imagen'] = $imagenPath;
         } else {
             $validated['imagen'] = "SIN-IMAGEN";
         }
@@ -74,6 +75,11 @@ class ArticuloController extends Controller
             $articulo = $this->articuloService->store($validated);
 
             if (!$articulo) {
+
+                if ($imagenPath) {
+                    Storage::delete($imagenPath);
+                }
+
                 return response()->json([
                     'message' => 'El artículo no pudo ser creado. Intente nuevamente.',
                     'error' => 'No se pudo crear el artículo',
@@ -85,6 +91,15 @@ class ArticuloController extends Controller
                 'message_text' => 'EL articulo se registró de manera exitosa',
             ]);
         } catch (\Exception $e) {
+            // Si hay un error, elimina la imagen subida
+            if ($imagenPath) {
+                Storage::delete($imagenPath);
+            }
+            // Manejo de excepciones
+            Log::error('Error al crear el articulo: ' . $e->getMessage(), [
+                'stack' => $e->getTrace(),
+            ]);
+
             // Captura cualquier error inesperado y responde con 500
             return response()->json([
                 'message' => 'Error al registrar el artículo.',
@@ -119,34 +134,55 @@ class ArticuloController extends Controller
         $this->authorize('update', Articulo::class);
 
         $validated = $request->validated();
+        $imagenPath = null;
+        try {
+            $articulo = $this->articuloService->getArticuloById($request->id);
 
-        $articulo = $this->articuloService->getArticuloById($request->id);
-
-        if ($request->hasFile("imagen")) {
-            if ($articulo->imagen && $articulo->imagen !== 'SIN-IMAGEN') {
-                if (Storage::delete($articulo->imagen)) {
-                    Log::info('Imagen eliminada correctamente: ' . $articulo->imagen);
-                } else {
-                    Log::error('Error al eliminar la imagen: ' . $articulo->imagen);
+            if ($request->hasFile("imagen")) {
+                if ($articulo->imagen && $articulo->imagen !== 'SIN-IMAGEN') {
+                    if (Storage::delete($articulo->imagen)) {
+                        Log::info('Imagen eliminada correctamente: ' . $articulo->imagen);
+                    } else {
+                        Log::error('Error al eliminar la imagen: ' . $articulo->imagen);
+                    }
                 }
+
+                $imagenPath = Storage::putFile("articulos", $request->file("imagen"));
+                $validated['imagen'] = $imagenPath;
+            } else {
+                $validated['imagen'] = $articulo->imagen ?? 'SIN-IMAGEN';
             }
 
-            $path = Storage::putFile("articulos", $request->file("imagen"));
-            $validated['imagen'] = $path;
-        } else {
-            $validated['imagen'] = $articulo->imagen ?? 'SIN-IMAGEN';
+            $articulo = $this->articuloService->update($validated, $id);
+
+            if (!$articulo) {
+                if ($imagenPath) {
+                    Storage::delete($imagenPath);
+                }
+
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            return response()->json([
+                'message' => 200,
+                'message_text' => 'El articulo se editó de manera exitosa',
+            ]);
+        } catch (\Exception $e) {
+            // Si hay un error, elimina la imagen subida
+            if ($imagenPath) {
+                Storage::delete($imagenPath);
+            }
+            // Manejo de excepciones
+            Log::error('Error al editar el articulo: ' . $e->getMessage(), [
+                'stack' => $e->getTrace(),
+            ]);
+
+            // Captura cualquier error inesperado y responde con 500
+            return response()->json([
+                'message' => 'Error al editar el artículo.',
+                'error' => $e->getMessage(),
+            ], 500);  // Internal Server Error
         }
-
-        $articulo = $this->articuloService->update($validated, $id);
-
-        if (!$articulo) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        return response()->json([
-            'message' => 200,
-            'message_text' => 'El articulo se editó de manera exitosa',
-        ]);
     }
 
     /**
@@ -237,7 +273,7 @@ class ArticuloController extends Controller
     public function buscarArticulos(Request $request)
     {
         $data = $request->all();
-        
+
         $articulos = $this->articuloService->getAllArticulos($data);
 
         if (!$articulos) {

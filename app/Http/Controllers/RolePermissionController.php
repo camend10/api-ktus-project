@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Roles\RoleRequest;
 use App\Services\RoleService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
 
 class RolePermissionController extends Controller
@@ -76,7 +77,11 @@ class RolePermissionController extends Controller
     {
         $this->authorize('update', Role::class);
         $validated = $request->validated();
-
+        // Log::info('Datos recibidos para sincronización', [
+        //     'permissions' => $validated["permissions"],
+        //     'role_id' => $id,
+        // ]);
+        
         $role = $this->roleService->updateRoles($validated, $id, $validated["permissions"]);
 
         return response()->json([

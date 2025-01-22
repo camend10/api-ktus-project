@@ -5,6 +5,9 @@ namespace App\Services\Articulos;
 use App\Models\Articulos\Articulo;
 use App\Models\Articulos\ArticuloWallet;
 use App\Models\Articulos\BodegaArticulo;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ArticuloService
 {
@@ -53,144 +56,166 @@ class ArticuloService
             return false;
         }
         $request["user_id"] = $user->id;
-        $articulo  = Articulo::create($request);
+        try {
+            // Inicia la transacción
+            DB::beginTransaction();
+            $articulo  = Articulo::create($request);
 
-        if ($articulo) {
-            // $bodegas_articulos = json_decode($request['bodegas_articulos'], true);
-            // $articulos_wallets = json_decode($request['articulos_wallets'], true);
+            if ($articulo) {
+                // $bodegas_articulos = json_decode($request['bodegas_articulos'], true);
+                // $articulos_wallets = json_decode($request['articulos_wallets'], true);
 
-            // Sincronizar bodegas
+                // Sincronizar bodegas
 
-            $bodegas_articulos = collect($request['bodegas_articulos'])
-                ->map(function ($item) use ($articulo) {
-                    return [
-                        'bodega_id' => $item['bodega']['id'], // Incluye explícitamente el id de la bodega como campo
-                        'cantidad' => $item['cantidad'],
-                        'estado' => 1,
-                        'unidad_id' => $item['unidad']['id'],
-                        'empresa_id' => $articulo->empresa_id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-                });
+                $bodegas_articulos = collect($request['bodegas_articulos'])
+                    ->map(function ($item) use ($articulo) {
+                        return [
+                            'bodega_id' => $item['bodega']['id'], // Incluye explícitamente el id de la bodega como campo
+                            'cantidad' => $item['cantidad'],
+                            'estado' => 1,
+                            'unidad_id' => $item['unidad']['id'],
+                            'empresa_id' => $articulo->empresa_id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    });
 
 
-            $articulo->bodegas()->sync($bodegas_articulos);
+                $articulo->bodegas()->sync($bodegas_articulos);
 
-            // Sincronizar wallets
-            $articulos_wallets = collect($request['articulos_wallets'])
-                ->map(function ($item)  use ($articulo) {
+                // Sincronizar wallets
+                $articulos_wallets = collect($request['articulos_wallets'])
+                    ->map(function ($item)  use ($articulo) {
 
-                    $segmento_cliente_id = NULL;
-                    if ($item['segmento_cliente_id_premul'] == 9999999) {
                         $segmento_cliente_id = NULL;
-                    } else {
-                        $segmento_cliente_id = $item['segmento_cliente_id_premul'];
-                    }
+                        if ($item['segmento_cliente_id_premul'] == 9999999) {
+                            $segmento_cliente_id = NULL;
+                        } else {
+                            $segmento_cliente_id = $item['segmento_cliente_id_premul'];
+                        }
 
 
-                    $sede_id = NULL;
-                    if ($item['sede_id_premul'] == 9999999) {
                         $sede_id = NULL;
-                    } else {
-                        $sede_id = $item['sede_id_premul'];
-                    }
+                        if ($item['sede_id_premul'] == 9999999) {
+                            $sede_id = NULL;
+                        } else {
+                            $sede_id = $item['sede_id_premul'];
+                        }
 
-                    // Aquí siempre agregamos los campos necesarios
-                    $wallet_data = [
-                        'unidad_id' => $item['unidad']['id'],
-                        'precio' => $item['precio'],
-                        'estado' => 1,
-                        'empresa_id' => $articulo->empresa_id,
-                        'segmento_cliente_id' => $segmento_cliente_id,
-                        'sede_id' =>  $sede_id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                        // Aquí siempre agregamos los campos necesarios
+                        $wallet_data = [
+                            'unidad_id' => $item['unidad']['id'],
+                            'precio' => $item['precio'],
+                            'estado' => 1,
+                            'empresa_id' => $articulo->empresa_id,
+                            'segmento_cliente_id' => $segmento_cliente_id,
+                            'sede_id' =>  $sede_id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
 
-                    // // Verificar y agregar segmento_cliente_id si está definido
-                    // if (isset($item['segmento_cliente']) && isset($item['segmento_cliente']['id'])) {
-                    //     $wallet_data['segmento_cliente_id'] = $item['segmento_cliente']['id'];
-                    // }
+                        // // Verificar y agregar segmento_cliente_id si está definido
+                        // if (isset($item['segmento_cliente']) && isset($item['segmento_cliente']['id'])) {
+                        //     $wallet_data['segmento_cliente_id'] = $item['segmento_cliente']['id'];
+                        // }
 
-                    // // Verificar y agregar sede_id si está definido
-                    // if (isset($item['sede']) && isset($item['sede']['id'])) {
-                    //     $wallet_data['sede_id'] = $item['sede']['id'];
-                    // }
+                        // // Verificar y agregar sede_id si está definido
+                        // if (isset($item['sede']) && isset($item['sede']['id'])) {
+                        //     $wallet_data['sede_id'] = $item['sede']['id'];
+                        // }
 
-                    // El valor de la clave debe ser el id de la sede, o null si no existe
-                    // El valor de la clave debe ser el id de la sede, o null si no existe
-                    // return [
-                    //     $item['sede']['id'] ?? null => $wallet_data
-                    // ];
+                        // El valor de la clave debe ser el id de la sede, o null si no existe
+                        // El valor de la clave debe ser el id de la sede, o null si no existe
+                        // return [
+                        //     $item['sede']['id'] ?? null => $wallet_data
+                        // ];
 
-                    return $wallet_data;
-                });
-            // ->filter(function ($value, $key) {
-            //     // Filtrar elementos con clave null
-            //     return $key !== null;
-            // });
-            // Sincronizar los datos de wallets con los artículos
-            $articulo->wallets()->sync($articulos_wallets);
-        } else {
-            return 500;
+                        return $wallet_data;
+                    });
+                // ->filter(function ($value, $key) {
+                //     // Filtrar elementos con clave null
+                //     return $key !== null;
+                // });
+                // Sincronizar los datos de wallets con los artículos
+                $articulo->wallets()->sync($articulos_wallets);
+            } else {
+                return 500;
+            }
+
+            // Confirma la transacción
+            DB::commit();
+
+            return $articulo;
+        } catch (\Throwable $e) {
+            // Revierte la transacción si ocurre un error
+            DB::rollBack();
+            Log::error('Error al crear el articulo: ' . $e->getMessage());
+            throw new HttpException(500, $e->getMessage());
+            return false;
         }
-        return $articulo;
     }
 
     public function update(array $request, $id)
     {
 
-        $articulo = Articulo::findOrFail($id);
+        try {
+            // Inicia la transacción
+            DB::beginTransaction();
+            $articulo = Articulo::findOrFail($id);
 
-        // $articulo->especificaciones = is_array($request['especificaciones'])
-        //     ? json_encode($request['especificaciones'], JSON_UNESCAPED_UNICODE)
-        //     : $request['especificaciones'];
-
-        $articulo->especificaciones = empty($request['especificaciones'])
-            ? null
-            : (is_array($request['especificaciones'])
-                ? json_encode($request['especificaciones'], JSON_UNESCAPED_UNICODE)
-                : $request['especificaciones']);
-
-
-        // Filtrar y llenar los datos del artículo
-        $articulo->fill(array_intersect_key($request, array_flip([
-            'sku',
-            'nombre',
-            'descripcion',
-            'precio_general',
-            'punto_pedido',
-            'tipo',
-            'imagen',
-            'iva_id',
-            'empresa_id',
-            'estado',
-            'especificaciones',
-            'categoria_id',
-            'is_gift',
-            'descuento_maximo',
-            'descuento_minimo',
-            'tiempo_de_abastecimiento',
-            'disponibilidad',
-            'peso',
-            'ancho',
-            'alto',
-            'largo',
-            'user_id',
-            'punto_pedido_unidad_id',
-            'is_discount',
-            'impuesto',
-            'proveedor_id'
-        ])));
-
-        // Guardar cambios
-        $articulo->save();
+            $articulo->especificaciones = empty($request['especificaciones'])
+                ? null
+                : (is_array($request['especificaciones'])
+                    ? json_encode($request['especificaciones'], JSON_UNESCAPED_UNICODE)
+                    : $request['especificaciones']);
 
 
-        // $articulo->update($request);
+            // Filtrar y llenar los datos del artículo
+            $articulo->fill(array_intersect_key($request, array_flip([
+                'sku',
+                'nombre',
+                'descripcion',
+                'precio_general',
+                'punto_pedido',
+                'tipo',
+                'imagen',
+                'iva_id',
+                'empresa_id',
+                'estado',
+                'especificaciones',
+                'categoria_id',
+                'is_gift',
+                'descuento_maximo',
+                'descuento_minimo',
+                'tiempo_de_abastecimiento',
+                'disponibilidad',
+                'peso',
+                'ancho',
+                'alto',
+                'largo',
+                'user_id',
+                'punto_pedido_unidad_id',
+                'is_discount',
+                'impuesto',
+                'proveedor_id'
+            ])));
 
-        return $articulo;
+            // Guardar cambios
+            $articulo->save();
+
+
+            // $articulo->update($request);
+
+            DB::commit();
+
+            return $articulo;
+        } catch (\Throwable $e) {
+            // Revierte la transacción si ocurre un error
+            DB::rollBack();
+            Log::error('Error al editar el articulo: ' . $e->getMessage());
+            throw new HttpException(500, $e->getMessage());
+            return false;
+        }
     }
 
     public function cambiarEstado($request, $id)

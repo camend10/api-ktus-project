@@ -10,6 +10,7 @@ use App\Models\Kardex\ArticuloStockInicial;
 use App\Services\Kardex\KardexService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -25,7 +26,7 @@ class KardexController extends Controller
 
     public function kardex_articulos($request, $bodega_id, $year, $month, $articulo, $opcion)
     {
-
+        
         $movimientos_articulos = collect([]);
         // ENTRADAS
 
@@ -33,7 +34,7 @@ class KardexController extends Controller
         foreach ($query_solicitudes as $item) {
             $movimientos_articulos->push($item);
         }
-
+        
         $query_conversiones_entradas = $this->kardexService->getConversionesEntradas($request, $opcion);
         foreach ($query_conversiones_entradas as $item) {
             $movimientos_articulos->push($item);
@@ -66,23 +67,34 @@ class KardexController extends Controller
         // 2.1 - AGRUPAR LOS ARTICULOS SEGUN UNIDAD
         $kardex_articulos = collect([]);
         foreach ($movimientos_articulos->groupBy('articulo_id') as $key => $mov_articulo) {
-
             // MOVIMIENTOS DE LAS UNIDADES DE UN PRODUCTO
             $movimiento_unidades = collect([]);
             $unidades = collect([]);
+            
             foreach ($mov_articulo->groupBy('unidad_id') as $key_unidad => $mov_unidad) {
                 // LISTA DE MOVIMIENTOS DE UNA UNIDAD EN ESPECIFICO
                 $movimientos = collect([]);
 
-                $stock_inicial = ArticuloStockInicial::whereDate("created_at", "$year-$month-01")
-                    ->where("articulo_id", $mov_unidad[0]->articulo_id)
-                    ->where("unidad_id", $mov_unidad[0]->unidad_id)
-                    ->where("bodega_id", $bodega_id)
-                    ->where("empresa_id", $mov_unidad[0]->empresa_id)
+                $dia_minimo = ArticuloStockInicial::selectRaw('MIN(DAY(created_at)) as dia_minimo')
+                    ->whereYear('created_at', $year)
+                    ->whereMonth('created_at', $month)
+                    ->where("articulo_id", (int) $mov_unidad[0]->articulo_id)
+                    ->where("unidad_id", (int) $mov_unidad[0]->unidad_id)
+                    ->where("bodega_id", (int) $bodega_id)
+                    ->where("empresa_id", (int) $mov_unidad[0]->empresa_id)
+                    ->value('dia_minimo');
+
+                $dia_minimo = $dia_minimo ?: 1;
+
+                $stock_inicial = ArticuloStockInicial::whereDate("created_at", "$year-$month-$dia_minimo")
+                    ->where("articulo_id", (int) $mov_unidad[0]->articulo_id)
+                    ->where("unidad_id", (int) $mov_unidad[0]->unidad_id)
+                    ->where("bodega_id", (int) $bodega_id)
+                    ->where("empresa_id", (int) $mov_unidad[0]->empresa_id)
                     ->first();
 
-                $cantidad_anterior = $stock_inicial ? $stock_inicial->cantidad : 0;
-                $precio_unitario_anterior = $stock_inicial ? $stock_inicial->precio_avg : 0;
+                $cantidad_anterior = $stock_inicial ? (int) $stock_inicial->cantidad : 0;
+                $precio_unitario_anterior = $stock_inicial ? (float) $stock_inicial->precio_avg : 0;
                 $total_anterior = round($cantidad_anterior * $precio_unitario_anterior, 2);
 
                 // Configurar Carbon en español
@@ -100,9 +112,10 @@ class KardexController extends Controller
                 ]);
 
                 foreach ($mov_unidad->sortBy("fecha_entrega_num") as $item) {
-                    $cantidad_actual = $item->cantidad;
+
+                    $cantidad_actual = (int) $item->cantidad;
                     $cantidad_existencia = 0;
-                    if ($item->tipo == 1) {
+                    if ((int) $item->tipo == 1) {
                         // ENTRADA
                         $cantidad_existencia = $cantidad_anterior + $cantidad_actual;
                     } else {
@@ -110,29 +123,34 @@ class KardexController extends Controller
                         $cantidad_existencia = $cantidad_anterior - $cantidad_actual;
                     }
 
-                    $precio_actual = $item->costo_avg == 0 ? $precio_unitario_anterior : $item->costo_avg;
+                    if ($cantidad_existencia < 0) {
+                        $cantidad_existencia = 0;
+                    }
+
+                    $precio_actual = (float) $item->costo_avg == 0 ? $precio_unitario_anterior : (float) $item->costo_avg;
                     $total_actual = round($cantidad_actual * $precio_actual, 2);
 
                     $total_existencia = 0;
-                    if ($item->tipo == 1) {
+                    if ((int) $item->tipo == 1) {
                         // ENTRADA
                         $total_existencia = $total_anterior + $total_actual;
                     } else {
                         //SALIDA
-                        $total_existencia = $total_anterior - $total_actual;
+                        $total_existencia = abs($total_anterior - $total_actual);
                     }
 
-                    $precio_existencia = round($total_existencia / $cantidad_existencia, 2);
+                    // $precio_existencia = round($total_existencia / $cantidad_existencia, 2);
+                    $precio_existencia = $cantidad_existencia > 0 ? round($total_existencia / $cantidad_existencia, 2) : 0;
 
                     $movimientos->push([
                         "fecha" => Carbon::parse($item->fecha_entrega_format)->translatedFormat('d M Y'),
                         "detalle" => $item->tipo_movimiento,
-                        "ingreso" => $item->tipo == 1 ? [
+                        "ingreso" => (int) $item->tipo == 1 ? [
                             "cantidad" => $cantidad_actual,
                             "precio" => $precio_actual,
                             "total" => $total_actual,
                         ] : NULL,
-                        "salida" => $item->tipo == 2 ? [
+                        "salida" => (int) $item->tipo == 2 ? [
                             "cantidad" => $cantidad_actual,
                             "precio" => $precio_actual,
                             "total" => $total_actual,
@@ -166,9 +184,8 @@ class KardexController extends Controller
                 "unidad_first" =>  $unidades->first(),
                 "unidades" =>  $unidades,
             ]);
-
-            return $kardex_articulos;
         }
+        return $kardex_articulos;
     }
 
     public function index(Request $request)
@@ -178,13 +195,15 @@ class KardexController extends Controller
         $year = $request->year;
         $month = $request->month;
         $articulo = $request->articulo;
-
+        // $opc = $request->opc;
+        $opc = 1;
+        
         Carbon::setLocale('es');
 
         try {
 
             return response()->json([
-                'kardex_articulos' => $this->kardex_articulos($request, $bodega_id, $year, $month, $articulo,1)
+                'kardex_articulos' => $this->kardex_articulos($request, $bodega_id, $year, $month, $articulo, $opc)
             ]);
         } catch (\Exception $e) {
 
@@ -208,7 +227,7 @@ class KardexController extends Controller
         $month = $request->get("month");
         $articulo = $request->get("articulo");
 
-        $kardex_articulos = $this->kardex_articulos($request, $bodega_id, $year, $month, $articulo,2);
+        $kardex_articulos = $this->kardex_articulos($request, $bodega_id, $year, $month, $articulo, 2);
 
         return Excel::download(new DownloadKardex($kardex_articulos), 'Reporte_Kardex.xlsx');
     }

@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Usuarios;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Usuarios\EmailRequest;
+use App\Http\Requests\Usuarios\PasswordRequest;
+use App\Http\Requests\Usuarios\PerfilRequest;
 use App\Http\Requests\Usuarios\UsuarioRequest;
 use App\Models\User;
 use App\Services\UsuarioService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class UsuarioController extends Controller
@@ -318,6 +322,223 @@ class UsuarioController extends Controller
         return response()->json([
             'message' => 200,
             'message_text' => $texto,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'identificacion' => $user->identificacion,
+                'usuario' => $user->usuario,
+                'direccion' => is_null($user->direccion) ? '' : $user->direccion,
+                'celular' => $user->celular,
+                'estado' => $user->estado,
+                'empresa_id' => $user->empresa_id,
+                'role_id' => $user->role_id,
+                'role' => $user->role,
+                'roles' => $user->roles,
+                'avatar' => $user->avatar != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $user->avatar : env("APP_URL") . "storage/users/blank.png",
+                'genero_id' => $user->genero_id,
+                'departamento_id' => $user->departamento_id,
+                'municipio_id' => $user->municipio_id,
+                'tipo_doc_id' => $user->tipo_doc_id,
+                'fecha_nacimiento' => $user->fecha_nacimiento,
+                'sede_id' => $user->sede_id,
+                'nombre_sede' => $user->sede->nombre,
+                'sedes' => $sedes,
+                'sigla' => $user->tipodocumento->sigla,
+                'empresa' => $user->empresa->nombre,
+                "created_format_at" => $user->created_at ? $user->created_at->format("Y-m-d h:i A") : ''
+            ]
+        ]);
+    }
+
+    public function edit_perfil(PerfilRequest $request, string $id)
+    {
+
+        $validated = $request->validated();
+
+        $user = $this->userService->getUserById($request->id);
+
+        if ($request->hasFile("imagen")) {
+            if ($user->avatar && $user->avatar !== 'SIN-IMAGEN') {
+                Storage::delete($user->avatar);
+            }
+
+            $path = Storage::putFile("users", $request->file("imagen"));
+            $validated['avatar'] = $path;
+        } else {
+            $validated['avatar'] = $user->avatar ?? 'SIN-IMAGEN';
+        }
+
+        $user = $this->userService->editPerfil($validated, $request->role_id, $request->id);
+
+        $sedes = $user->sedes->map(function ($sede) {
+            return [
+                'id' => $sede->id,
+                'codigo' => $sede->codigo,
+                'nombre' => $sede->nombre,
+                'direccion' => $sede->direccion ?? '',
+                'telefono' => $sede->telefono,
+                'celular' => $sede->celular,
+                'identificacion_responsable' => $sede->identificacion_responsable,
+                'responsable' => $sede->responsable,
+                'telefono_responsable' => $sede->telefono_responsable,
+                'empresa_id' => $sede->empresa_id,
+                'estado' => $sede->estado,
+                "created_format_at" => $sede->created_at ? $sede->created_at->format("Y-m-d h:i A") : ''
+            ];
+        })->toArray();
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => 'El usuario se editó de manera exitosa',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'identificacion' => $user->identificacion,
+                'usuario' => $user->usuario,
+                'direccion' => is_null($user->direccion) ? '' : $user->direccion,
+                'celular' => $user->celular,
+                'estado' => $user->estado,
+                'empresa_id' => $user->empresa_id,
+                'role_id' => $user->role_id,
+                'role' => $user->role,
+                'roles' => $user->roles,
+                'avatar' => $user->avatar != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $user->avatar : env("APP_URL") . "storage/users/blank.png",
+                'genero_id' => $user->genero_id,
+                'departamento_id' => $user->departamento_id,
+                'municipio_id' => $user->municipio_id,
+                'tipo_doc_id' => $user->tipo_doc_id,
+                'fecha_nacimiento' => $user->fecha_nacimiento,
+                'sede_id' => $user->sede_id,
+                'nombre_sede' => $user->sede->nombre,
+                'sedes' => $sedes,
+                'sigla' => $user->tipodocumento->sigla,
+                'empresa' => $user->empresa->nombre,
+                "created_format_at" => $user->created_at ? $user->created_at->format("Y-m-d h:i A") : ''
+            ]
+        ]);
+    }
+
+    public function edit_email(EmailRequest $request, string $id)
+    {
+
+        $validated = $request->validated();
+
+        $user = $this->userService->editEmail($validated, $request->id);
+
+        $sedes = $user->sedes->map(function ($sede) {
+            return [
+                'id' => $sede->id,
+                'codigo' => $sede->codigo,
+                'nombre' => $sede->nombre,
+                'direccion' => $sede->direccion ?? '',
+                'telefono' => $sede->telefono,
+                'celular' => $sede->celular,
+                'identificacion_responsable' => $sede->identificacion_responsable,
+                'responsable' => $sede->responsable,
+                'telefono_responsable' => $sede->telefono_responsable,
+                'empresa_id' => $sede->empresa_id,
+                'estado' => $sede->estado,
+                "created_format_at" => $sede->created_at ? $sede->created_at->format("Y-m-d h:i A") : ''
+            ];
+        })->toArray();
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => 'El email se editó de manera exitosa',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'identificacion' => $user->identificacion,
+                'usuario' => $user->usuario,
+                'direccion' => is_null($user->direccion) ? '' : $user->direccion,
+                'celular' => $user->celular,
+                'estado' => $user->estado,
+                'empresa_id' => $user->empresa_id,
+                'role_id' => $user->role_id,
+                'role' => $user->role,
+                'roles' => $user->roles,
+                'avatar' => $user->avatar != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $user->avatar : env("APP_URL") . "storage/users/blank.png",
+                'genero_id' => $user->genero_id,
+                'departamento_id' => $user->departamento_id,
+                'municipio_id' => $user->municipio_id,
+                'tipo_doc_id' => $user->tipo_doc_id,
+                'fecha_nacimiento' => $user->fecha_nacimiento,
+                'sede_id' => $user->sede_id,
+                'nombre_sede' => $user->sede->nombre,
+                'sedes' => $sedes,
+                'sigla' => $user->tipodocumento->sigla,
+                'empresa' => $user->empresa->nombre,
+                "created_format_at" => $user->created_at ? $user->created_at->format("Y-m-d h:i A") : ''
+            ]
+        ]);
+    }
+
+    public function edit_password(Request $request, string $id)
+    {
+
+        $user = auth('api')->user();
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'password' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (!\Illuminate\Support\Facades\Hash::check($value, auth('api')->user()->password)) {
+                        return $fail(__('La clave actual es incorrecta'));
+                    }
+                }
+            ],
+            'newpassword' => 'required|min:8|max:20',
+        ], [
+            'password.required' => 'El password es obligatorio',
+            'newpassword.required' => 'El nuevo password es obligatorio',
+            'newpassword.string' => 'El nuevo password es obligatorio debe ser una cadena de caracteres',
+            'newpassword.max' => 'El maximo de caracteres del nuevo password es 30',
+            'newpassword.min' => 'El minimo de caracteres del nuevo password es 8',
+        ]);
+
+        if (!$validator->passes()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrieron errores de validación.',
+                'errors' => $validator->errors()->toArray() // Devuelve todos los errores
+            ], 422);
+        }
+
+        // Verificar la contraseña actual
+        // if (!Hash::check($request->password, $user->password)) {
+        //     // return response()->json(['message' => 400, 'message_text' => 'La contraseña actual es incorrecta.'], 400);
+
+        //     return response()->json([
+        //         'message' => 422,
+        //         'message' => 'La contraseña actual es incorrecta',
+        //     ], 422);
+        // }
+
+        $user = $this->userService->edit_password($request, $request->id);
+
+        $sedes = $user->sedes->map(function ($sede) {
+            return [
+                'id' => $sede->id,
+                'codigo' => $sede->codigo,
+                'nombre' => $sede->nombre,
+                'direccion' => $sede->direccion ?? '',
+                'telefono' => $sede->telefono,
+                'celular' => $sede->celular,
+                'identificacion_responsable' => $sede->identificacion_responsable,
+                'responsable' => $sede->responsable,
+                'telefono_responsable' => $sede->telefono_responsable,
+                'empresa_id' => $sede->empresa_id,
+                'estado' => $sede->estado,
+                "created_format_at" => $sede->created_at ? $sede->created_at->format("Y-m-d h:i A") : ''
+            ];
+        })->toArray();
+
+        return response()->json([
+            'message' => 200,
+            'message_text' => 'El password se editó de manera exitosa',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

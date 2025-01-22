@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\Articulos\Articulo;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Support\Facades\Log;
 
 class ArticuloPolicy
 {
@@ -13,11 +14,17 @@ class ArticuloPolicy
      */
     public function viewAny(User $user): bool
     {
-        if ($user->can('ver_articulo')) {
-            return true;
-        }
+        // if ($user->can('ver_articulos')) {
+        //     return true;
+        // }
 
-        return false;
+        // return false;
+
+        // Log::info('Checking permission', [
+        //     'user_id' => $user->id,
+        //     'permissions' => $user->getAllPermissions()->pluck('name'),
+        // ]);
+        return $user->can('ver_articulos');
     }
 
     /**

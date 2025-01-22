@@ -94,7 +94,6 @@ class Solicitud extends Model
             ->where('estado', 2);
     }
 
-
     public function scopeFilterAdvance($query, $data)
     {
         // Log::error('Error al crear la factura: ' . json_encode($data));
@@ -102,6 +101,7 @@ class Solicitud extends Model
         // Normaliza los valores especiales
         $data['buscar'] = $data['buscar'] ?? null;
         $data['articulo'] = $data['articulo'] ?? null;
+        $data['sede_id'] = isset($data['sede_id']) && $data['sede_id'] == 9999999 ? null : ($data['sede_id'] ?? null);
         $data['bodega_id'] = isset($data['bodega_id']) && $data['bodega_id'] == 9999999 ? null : ($data['bodega_id'] ?? null);
         $data['proveedor_id'] = isset($data['proveedor_id']) && $data['proveedor_id'] == 9999999 ? null : ($data['proveedor_id'] ?? null);
         $data['fecha_inicio'] = $data['fecha_inicio'] ?? null;
@@ -118,6 +118,11 @@ class Solicitud extends Model
                     $sub->where('nombre', "like", "%" . $data['articulo'] . "%");
                 });
             });
+        });
+
+        // Filtro por sede_id
+        $query->when(isset($data['sede_id']), function ($sql) use ($data) {
+            $sql->where('sede_id', $data['sede_id']);
         });
 
         // Filtro por bodega_id

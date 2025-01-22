@@ -121,7 +121,7 @@ class FacturaService
                         ]);
                     }
                 ])
-                ->where('estado', 1)
+                ->where('estado', 2)
                 ->where('empresa_id', $data["empresa_id"])
                 ->where('sede_id', $data["sede_id"])
                 ->orderBy('id', 'desc')
@@ -144,7 +144,7 @@ class FacturaService
                         ]);
                     }
                 ])
-                ->where('estado', 1)
+                ->where('estado', 2)
                 ->where('empresa_id', $data["empresa_id"])
                 ->orderBy('id', 'desc')
                 ->get();

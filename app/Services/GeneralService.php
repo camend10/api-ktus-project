@@ -54,17 +54,47 @@ class GeneralService
             ->get();
     }
 
+    public function empresasActivas()
+    {
+        return Empresa::where('estado', 1)
+            ->get();
+    }
+
     public function sedes($empresa_id)
     {
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        $sede_id = $user->sede_id;
+        $role_id = $user->role_id;
+
         return Sede::where('empresa_id', $empresa_id)
+            ->when(!in_array($role_id, [1, 2]), function ($query) use ($sede_id) {
+                $query->where('id', $sede_id);
+            })
             ->where('estado', 1)
             ->get();
     }
 
     public function bodegas($empresa_id)
     {
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        $sede_id = $user->sede_id;
+        $role_id = $user->role_id;
+
         return Bodega::where('empresa_id', $empresa_id)
             ->where('estado', 1)
+            ->when(!in_array($role_id, [1, 2]), function ($query) use ($sede_id) {
+                $query->where('sede_id', $sede_id);
+            })
             ->get();
     }
 

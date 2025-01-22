@@ -206,8 +206,7 @@ class FacturaController extends Controller
     {
         $data = $request->all();
 
-        $detalles = $this->facturaService->getAllDetallesFacturas($data);
-
+        $detalles = $this->facturaService->getAllDetallesFacturas($data);        
         return Excel::download(new FacturaDetalleExport($detalles), 'Detalle_facturas-' . uniqid() . '.xlsx');
     }
 

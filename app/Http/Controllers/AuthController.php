@@ -6,8 +6,12 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 // use Validator;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Symfony\Component\Process\Exception\RuntimeException;
 use Tymon\JWTAuth\JWTGuard;
 
@@ -64,7 +68,11 @@ class AuthController extends Controller
 
         $credentials = request(['email', 'password']);
         if (! $token = auth('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            // return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'Correo o contraseña incorrectos. Por favor, inténtelo de nuevo.'
+            ], 401);
         }
 
         return $this->respondWithToken($token, $empresa_id, $sede_id);
@@ -137,9 +145,21 @@ class AuthController extends Controller
         }
 
         if ($user instanceof \App\Models\User) {
+            // $roles = $user->roles()->pluck('name');
+            // Log::info('Roles del usuario', ['roles' => $roles]);
+            // $allPermissions = $user->getAllPermissions()->pluck('name');
+            // Log::info('Todos los permisos del usuario', ['permissions' => $allPermissions]);
+
+            // $permissions = DB::table('role_has_permissions')
+            //     ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
+            //     ->where('role_has_permissions.role_id', $user->role_id)
+            //     ->pluck('permissions.name'); // Obtén solo el campo 'name'
+
             $permissions = $user->getAllPermissions()->map(function ($perm) {
                 return $perm->name;
             });
+
+            // return $permissions;
         }
 
         if (! $guard instanceof JWTGuard) {
@@ -202,6 +222,10 @@ class AuthController extends Controller
                 'sedes' => $sedes,
                 'sigla' => $user->tipodocumento->sigla,
                 'empresa' => $user->empresa->nombre,
+                'departamento' => $user->departamento,
+                'municipio' => $user->municipio,
+                'tipodocumento' => $user->tipodocumento,
+                'genero' => $user->genero,
                 "created_format_at" => $user->created_at ? $user->created_at->format("Y-m-d h:i A") : ''
             ]
             // 'user' => $guard->user()

@@ -11,7 +11,7 @@ class KardexService
 
     public function getSolicitudes($data, $opcion)
     {
-
+        
         $bodega_id = $data["bodega_id"];
         $year = $data["year"];
         $month = $data["month"];
