@@ -72,4 +72,9 @@ class EmpresaService
         // validacion por usuarios
         return $empresa;
     }
+
+    public function getEmpresaById($id)
+    {
+        return Empresa::findOrFail($id);
+    }
 }

@@ -93,6 +93,7 @@ Route::group([
     Route::resource("users", UsuarioController::class);
     Route::patch('/sedes/{id}/cambiar-estado', [SedeController::class, 'cambiarEstado']);
     Route::resource("sedes", SedeController::class);
+    Route::post('/empresas/{id}', [EmpresaController::class, 'update']);
     Route::patch('/empresas/{id}/cambiar-estado', [EmpresaController::class, 'cambiarEstado']);
     Route::resource("empresas", EmpresaController::class);
     Route::patch('/bodegas/{id}/cambiar-estado', [BodegaController::class, 'cambiarEstado']);
@@ -153,6 +154,7 @@ Route::group([
 });
 
 Route::get('/excel/export-articulo', [ArticuloController::class, 'export_articulo']);
+Route::get('/excel/export-articulo-baja-existencia', [ArticuloController::class, 'export_articulo_baja_existencia']);
 Route::get('/excel/export-kardex', [KardexController::class, 'export_kardex']);
 
 Route::group([
@@ -201,4 +203,14 @@ Route::group([
     Route::post('/plantillas/index', [PlantillaController::class, 'index']);
     Route::patch('/plantillas/{id}/cambiar-estado', [PlantillaController::class, 'cambiarEstado']);
     Route::resource("plantillas", PlantillaController::class);
+});
+
+Route::group([
+    'middleware' => 'auth:api',
+], function ($router) {
+    // Route::post('/facturas/editar/{id}', [FacturaController::class, 'update']);
+    // Route::post('/facturas/eliminar-detalle', [FacturaController::class, 'eliminarDetalle']);
+    Route::post('/reportes/baja-existencia', [ArticuloController::class, 'baja_existencia']);
+    // Route::patch('/facturas/{id}/cambiar-estado', [FacturaController::class, 'cambiarEstado']);
+    // Route::resource("reportes", FacturaController::class);
 });

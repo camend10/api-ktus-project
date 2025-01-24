@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Empresas\EmpresaRequest;
 use App\Services\Configuracion\EmpresaService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class EmpresaController extends Controller
 {
@@ -33,16 +35,18 @@ class EmpresaController extends Controller
                     'dv' => $empresa->dv,
                     'nombre' => $empresa->nombre,
                     'email' => $empresa->email,
-                    'direccion' => $empresa->direccion,
+                    'direccion' => $empresa->direccion ?? '',
                     'telefono' => $empresa->telefono,
-                    'web' => $empresa->web,
+                    'web' => $empresa->web ?? '',
                     'celular' => $empresa->celular,
                     'estado' => $empresa->estado,
                     'departamento_id' => $empresa->departamento_id,
                     'municipio_id' => $empresa->municipio_id,
                     'departamento' => $empresa->departamento->nombre,
                     'municipio' => $empresa->municipio->nombre,
-                    "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : ''
+                    "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : '',
+                    'lema' => $empresa->lema,
+                    'imagen' => $empresa->imagen != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $empresa->imagen : env("APP_URL") . "storage/empresas/blank.png",
                 ];
             })
         ]);
@@ -56,6 +60,13 @@ class EmpresaController extends Controller
 
         $validated = $request->validated();
 
+        if ($request->hasFile("imagen")) {
+            $path = Storage::putFile("empresas", $request->file("imagen"));
+            $validated['imagen'] = $path;
+        } else {
+            $validated['imagen'] = "SIN-IMAGEN";
+        }
+
         $empresa = $this->empresaService->storeEmpresa($validated);
 
         return response()->json([
@@ -67,16 +78,18 @@ class EmpresaController extends Controller
                 'dv' => $empresa->dv,
                 'nombre' => $empresa->nombre,
                 'email' => $empresa->email,
-                'direccion' => $empresa->direccion,
+                'direccion' => $empresa->direccion ?? '',
                 'telefono' => $empresa->telefono,
-                'web' => $empresa->web,
+                'web' => $empresa->web ?? '',
                 'celular' => $empresa->celular,
                 'estado' => $empresa->estado,
                 'departamento_id' => $empresa->departamento_id,
                 'municipio_id' => $empresa->municipio_id,
                 'departamento' => $empresa->departamento->nombre,
                 'municipio' => $empresa->municipio->nombre,
-                "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : ''
+                "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : '',
+                'lema' => $empresa->lema,
+                'imagen' => $empresa->imagen != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $empresa->imagen : env("APP_URL") . "storage/empresas/blank.png",
             ]
         ]);
     }
@@ -96,6 +109,23 @@ class EmpresaController extends Controller
     {
         $validated = $request->validated();
 
+        $empresa = $this->empresaService->getEmpresaById($request->id);
+
+        if ($request->hasFile("imagen")) {
+            if ($empresa->imagen && $empresa->imagen !== 'SIN-IMAGEN') {
+                if (Storage::delete($empresa->imagen)) {
+                    Log::info('Imagen eliminada correctamente: ' . $empresa->imagen);
+                } else {
+                    Log::error('Error al eliminar la imagen: ' . $empresa->imagen);
+                }
+            }
+
+            $path = Storage::putFile("empresas", $request->file("imagen"));
+            $validated['imagen'] = $path;
+        } else {
+            $validated['imagen'] = $categoria->imagen ?? 'SIN-IMAGEN';
+        }
+
         $empresa = $this->empresaService->updateEmpresa($validated, $id);
 
         return response()->json([
@@ -107,16 +137,18 @@ class EmpresaController extends Controller
                 'dv' => $empresa->dv,
                 'nombre' => $empresa->nombre,
                 'email' => $empresa->email,
-                'direccion' => $empresa->direccion,
+                'direccion' => $empresa->direccion ?? '',
                 'telefono' => $empresa->telefono,
-                'web' => $empresa->web,
+                'web' => $empresa->web ?? '',
                 'celular' => $empresa->celular,
                 'estado' => $empresa->estado,
                 'departamento_id' => $empresa->departamento_id,
                 'municipio_id' => $empresa->municipio_id,
                 'departamento' => $empresa->departamento->nombre,
                 'municipio' => $empresa->municipio->nombre,
-                "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : ''
+                "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : '',
+                'lema' => $empresa->lema,
+                'imagen' => $empresa->imagen != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $empresa->imagen : env("APP_URL") . "storage/empresas/blank.png",
             ]
         ]);
     }
@@ -159,16 +191,18 @@ class EmpresaController extends Controller
                 'dv' => $empresa->dv,
                 'nombre' => $empresa->nombre,
                 'email' => $empresa->email,
-                'direccion' => $empresa->direccion,
+                'direccion' => $empresa->direccion ?? '',
                 'telefono' => $empresa->telefono,
-                'web' => $empresa->web,
+                'web' => $empresa->web ?? '',
                 'celular' => $empresa->celular,
                 'estado' => $empresa->estado,
                 'departamento_id' => $empresa->departamento_id,
                 'municipio_id' => $empresa->municipio_id,
                 'departamento' => $empresa->departamento->nombre,
                 'municipio' => $empresa->municipio->nombre,
-                "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : ''
+                "created_format_at" => $empresa->created_at ? $empresa->created_at->format("Y-m-d h:i A") : '',
+                'lema' => $empresa->lema,
+                'imagen' => $empresa->imagen != 'SIN-IMAGEN' ? env("APP_URL") . "storage/" . $empresa->imagen : env("APP_URL") . "storage/empresas/blank.png",
             ]
         ]);
     }

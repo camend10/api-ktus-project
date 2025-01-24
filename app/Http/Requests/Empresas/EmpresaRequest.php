@@ -21,7 +21,7 @@ class EmpresaRequest extends FormRequest
      */
     public function rules(): array
     {
-        return match ($this->method()) {
+        return match ($this->route('id') ? 'PUT' : $this->method()) {
             'POST' =>  [
                 'nit_empresa' => 'required|max:20|unique:empresa,nit_empresa',
                 'dv' => 'required|integer',
@@ -34,6 +34,8 @@ class EmpresaRequest extends FormRequest
                 'estado' => 'integer|nullable',
                 'departamento_id' => 'required',
                 'municipio_id' => 'required',
+                'imagen' => 'nullable|file|image|max:2048',
+                'lema' => 'nullable',
             ],
             'PUT' =>  [
                 'nit_empresa' => 'required|max:20|unique:empresa,nit_empresa,' . $this->id,
@@ -47,6 +49,8 @@ class EmpresaRequest extends FormRequest
                 'estado' => 'integer|nullable',
                 'departamento_id' => 'required',
                 'municipio_id' => 'required',
+                'imagen' => 'nullable|file|image|max:2048',
+                'lema' => 'nullable',
             ],
         };
     }

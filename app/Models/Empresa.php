@@ -24,6 +24,15 @@ class Empresa extends Model
         'estado',
         'departamento_id',
         'municipio_id',
+        'imagen',
+        'lema',
+    ];
+
+    protected $casts = [
+        'dv' => 'integer',
+        'telefono' => 'integer',
+        'estado' => 'integer',
+        'celular' => 'integer',
     ];
 
     public function departamento()

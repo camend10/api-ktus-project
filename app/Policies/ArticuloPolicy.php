@@ -86,4 +86,16 @@ class ArticuloPolicy
     {
         return false;
     }
+
+        /**
+     * Determine whether the user can delete the model.
+     */
+    public function baja_existencia(User $user): bool
+    {
+        if ($user->can('baja_existencia')) {
+            return true;
+        }
+
+        return false;
+    }
 }
