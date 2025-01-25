@@ -283,38 +283,5 @@ class ArticuloController extends Controller
         return response()->json([
             'articulos' => ArticuloCollection::make($articulos),
         ]);
-    }
-
-    public function baja_existencia(Request $request)
-    {
-
-        $this->authorize('baja_existencia', Articulo::class);
-
-        $data = $request->all();
-
-        $articulos = $this->articuloService->getBajaExistencia($data);
-
-        if (!$articulos) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        $num_art_agotados = $this->articuloService->getByDisponibilidad(3);
-        $num_art_por_agotar = $this->articuloService->getByDisponibilidad(2);
-
-        return response()->json([
-            'total' => $articulos->total(),
-            'articulos' => ArticuloCollection::make($articulos),
-            'num_art_agotados' => $num_art_agotados,
-            'num_art_por_agotar' => $num_art_por_agotar
-        ]);
-    }
-
-    public function export_articulo_baja_existencia(Request $request)
-    {
-        $data = $request->all();
-
-        $articulos = $this->articuloService->getAllArticulosBajaExistencia($data);
-
-        return Excel::download(new DownloadArticulo($articulos), 'Articulos_baja_existencia.xlsx');
-    }    
+    }  
 }

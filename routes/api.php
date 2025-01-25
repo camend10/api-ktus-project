@@ -22,6 +22,7 @@ use App\Http\Controllers\Kardex\KardexController;
 use App\Http\Controllers\Kpi\KpiController;
 use App\Http\Controllers\Movimientos\MovimientoController;
 use App\Http\Controllers\Movimientos\PlantillaController;
+use App\Http\Controllers\Reportes\ReporteController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\Solicitudes\SolicitudController;
 use App\Http\Controllers\Usuarios\UsuarioController;
@@ -154,7 +155,6 @@ Route::group([
 });
 
 Route::get('/excel/export-articulo', [ArticuloController::class, 'export_articulo']);
-Route::get('/excel/export-articulo-baja-existencia', [ArticuloController::class, 'export_articulo_baja_existencia']);
 Route::get('/excel/export-kardex', [KardexController::class, 'export_kardex']);
 
 Route::group([
@@ -210,7 +210,10 @@ Route::group([
 ], function ($router) {
     // Route::post('/facturas/editar/{id}', [FacturaController::class, 'update']);
     // Route::post('/facturas/eliminar-detalle', [FacturaController::class, 'eliminarDetalle']);
-    Route::post('/reportes/baja-existencia', [ArticuloController::class, 'baja_existencia']);
+    Route::post('/reportes/baja-existencia', [ReporteController::class, 'baja_existencia']);
     // Route::patch('/facturas/{id}/cambiar-estado', [FacturaController::class, 'cambiarEstado']);
     // Route::resource("reportes", FacturaController::class);
 });
+
+Route::get('/excel/export-articulo-baja-existencia', [ReporteController::class, 'export_articulo_baja_existencia']);
+Route::get('/pdf/baja-existencia', [ReporteController::class, 'pdf_baja_existencia']);
