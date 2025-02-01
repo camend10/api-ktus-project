@@ -87,12 +87,47 @@ class ArticuloPolicy
         return false;
     }
 
-        /**
+    /**
      * Determine whether the user can delete the model.
      */
     public function baja_existencia(User $user): bool
     {
         if ($user->can('baja_existencia')) {
+            return true;
+        }
+
+        return false;
+    }
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function ventas(User $user): bool
+    {
+        if ($user->can('ventas')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function vendidos(User $user): bool
+    {
+        if ($user->can('vendidos')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function movimientos(User $user): bool
+    {
+        if ($user->can('movimientos')) {
             return true;
         }
 

@@ -64,40 +64,47 @@ class FacturaService
     public function getAllFacturas($data)
     {
 
-        if ($data && !in_array($data["role_id"], [1, 2])) {
-            return Factura::with([
-                'empresa',
-                'sede',
-                'usuario',
-                'cliente',
-                'segmento',
-                'detalles_facturas',
-                'factura_deliverie.sede_deliverie',
-                'factura_pago.metodo_pago'
-            ])
-                ->FilterAdvance($data)
-                ->where("estado", 1)
-                ->where('empresa_id', $data["empresa_id"])
-                ->where('sede_id', $data["sede_id"])
-                ->orderBy("id", "desc")
-                ->get();
-        } else {
-            return Factura::with([
-                'empresa',
-                'sede',
-                'usuario',
-                'cliente',
-                'segmento',
-                'detalles_facturas',
-                'factura_deliverie.sede_deliverie',
-                'factura_pago.metodo_pago'
-            ])
-                ->FilterAdvance($data)
-                ->where("estado", 1)
-                ->where('empresa_id', $data["empresa_id"])
-                ->orderBy("id", "desc")
-                ->get();
-        }
+        $data['sede_id'] = isset($data['sede_id']) && $data['sede_id'] == 9999999 ? $data["sede_usuario_id"] : ($data['sede_id'] ?? null);
+
+        return Factura::with([
+            'empresa',
+            'sede',
+            'usuario',
+            'cliente',
+            'segmento',
+            'detalles_facturas',
+            'factura_deliverie.sede_deliverie',
+            'factura_pago.metodo_pago'
+        ])
+            ->FilterAdvance($data)
+            // ->where("estado", 1)
+            ->where('empresa_id', $data["empresa_id"])
+            // ->where('sede_id', $data["sede_id"])
+            ->orderBy("id", "desc")
+            ->get();
+    }
+
+    public function getAllFacturas2($data)
+    {
+
+        $data['sede_id'] = isset($data['sede_id']) && $data['sede_id'] == 9999999 ? $data["sede_usuario_id"] : ($data['sede_id'] ?? null);
+
+        return Factura::with([
+            'empresa',
+            'sede',
+            'usuario',
+            'cliente',
+            'segmento',
+            'detalles_facturas',
+            'factura_deliverie.sede_deliverie',
+            'factura_pago.metodo_pago'
+        ])
+            ->FilterAdvance($data)
+            ->where("estado", 1)
+            ->where('empresa_id', $data["empresa_id"])
+            // ->where('sede_id', $data["sede_id"])
+            ->orderBy("id", "desc")
+            ->get();
     }
 
     public function getAllDetallesFacturas($data)
@@ -152,7 +159,7 @@ class FacturaService
     }
 
     public function store($request)
-    {        
+    {
         $user = auth("api")->user();
 
         if (!$user) {
@@ -447,7 +454,7 @@ class FacturaService
                     ->where('unidad_id', $detalle->unidad_id)
                     ->where('bodega_id', $detalle->bodega_id)
                     ->where('empresa_id', $user->empresa_id)
-                    ->first();                
+                    ->first();
 
                 if ($bodega_articulo) {
                     $bodega_articulo->update([

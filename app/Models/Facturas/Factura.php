@@ -130,9 +130,15 @@ class Factura extends Model
         $data['fecha_inicio'] = $data['fecha_inicio'] ?? null;
         $data['fecha_final'] = $data['fecha_final'] ?? null;
         $data['vendedor_id'] = isset($data['vendedor_id']) && $data['vendedor_id'] == 9999999 ? null : ($data['vendedor_id'] ?? null);
+        $data['sede_id'] = isset($data['sede_id']) && $data['sede_id'] == 9999999 ? $data["sede_usuario_id"] : ($data['sede_id'] ?? null);
 
         $query->when($data['buscar'], function ($sql) use ($data) {
             $sql->where('id', $data['buscar']);
+        });
+
+        // Filtro por sede_id
+        $query->when(isset($data['sede_id']), function ($sql) use ($data) {
+            $sql->where('sede_id', $data['sede_id']);
         });
 
         // Filtro por segmento_id

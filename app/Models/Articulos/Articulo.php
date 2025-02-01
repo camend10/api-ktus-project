@@ -191,4 +191,16 @@ class Articulo extends Model
 
         return $query;
     }
+
+    // Accessor para la imagen
+    // public function getImagenAttribute($value)
+    // {
+    //     // Validar si la imagen es 'SIN-IMAGEN'
+    //     if ($value === 'SIN-IMAGEN' || $value === null) {
+    //         return env("APP_URL") . "storage/articulos/blank-image.svg";
+    //     }
+
+    //     // Devolver la URL completa de la imagen
+    //     return env("APP_URL") . "storage/" . $value;
+    // }
 }

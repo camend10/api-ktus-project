@@ -43,9 +43,9 @@ class Conversion extends Model
         'empresa_id' => 'integer',
         'sede_id' => 'integer',
         'estado' => 'integer',
-        'cantidad_inicial' => 'integer',
-        'cantidad_final' => 'integer',
-        'cantidad_convertida' => 'integer',
+        'cantidad_inicial' => 'float',
+        'cantidad_final' => 'float',
+        'cantidad_convertida' => 'float',
     ];
 
     public function setCreatedAtAttribute($value)

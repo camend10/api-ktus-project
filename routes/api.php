@@ -174,6 +174,7 @@ Route::get('/excel/export-clientes', [ClienteController::class, 'export_clientes
 
 Route::get('/facturas/imprimir-factura', [FacturaController::class, 'imprimir']);
 Route::get('/excel/export-factura', [FacturaController::class, 'export_factura']);
+Route::get('/excel/export-factura-2', [FacturaController::class, 'export_factura2']);
 Route::get('/excel/export-detalle-factura', [FacturaController::class, 'export_detalle_factura']);
 
 Route::group([
@@ -208,12 +209,16 @@ Route::group([
 Route::group([
     'middleware' => 'auth:api',
 ], function ($router) {
-    // Route::post('/facturas/editar/{id}', [FacturaController::class, 'update']);
-    // Route::post('/facturas/eliminar-detalle', [FacturaController::class, 'eliminarDetalle']);
     Route::post('/reportes/baja-existencia', [ReporteController::class, 'baja_existencia']);
-    // Route::patch('/facturas/{id}/cambiar-estado', [FacturaController::class, 'cambiarEstado']);
-    // Route::resource("reportes", FacturaController::class);
+    Route::post('/reportes/ventas', [ReporteController::class, 'ventas']);
+    Route::post('/reportes/vendidos', [ReporteController::class, 'vendidos']);
+    Route::post('/reportes/movimientos', [ReporteController::class, 'movimientos']);
 });
 
 Route::get('/excel/export-articulo-baja-existencia', [ReporteController::class, 'export_articulo_baja_existencia']);
 Route::get('/pdf/baja-existencia', [ReporteController::class, 'pdf_baja_existencia']);
+Route::get('/pdf/ventas', [ReporteController::class, 'pdf_ventas']);
+Route::get('/excel/export-vendidos', [ReporteController::class, 'export_vendidos']);
+Route::get('/pdf/vendidos', [ReporteController::class, 'pdf_vendidos']);
+Route::get('/pdf/inventario', [ReporteController::class, 'pdf_inventario']);
+Route::get('/pdf/movimientos', [ReporteController::class, 'pdf_movimientos']);

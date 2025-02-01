@@ -202,6 +202,15 @@ class FacturaController extends Controller
         return Excel::download(new FacturaGeneralExport($facturas), 'Facturas-' . uniqid() . '.xlsx');
     }
 
+    public function export_factura2(Request $request)
+    {
+        $data = $request->all();
+
+        $facturas = $this->facturaService->getAllFacturas2($data);
+
+        return Excel::download(new FacturaGeneralExport($facturas), 'Facturas-' . uniqid() . '.xlsx');
+    }
+
     public function export_detalle_factura(Request $request)
     {
         $data = $request->all();
